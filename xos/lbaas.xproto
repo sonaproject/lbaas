@@ -10,7 +10,7 @@ message Listener (XOSBase){
      optional string listener_id = 2 [help_text = "listener id", max_length = 36, null = False, db_index = False, blank = False];
      required string protocol = 3 [default = "http", choices = "(('HTTP', 'HTTP'), ('HTTPS', 'HTTPS'), ('TCP', 'TCP'))", max_length = 30, blank = False, null = False, db_index = False];
      required int32 protocol_port = 4 [help_text = "listening port", null = False, db_index = False, blank = False];
-     required int32 stat_port = 5 [help_text = "stat monitoring port", null = False, db_index = False, blank = False];
+     optional int32 stat_port = 5 [help_text = "stat monitoring port", null = True, db_index = False, blank = False];
      optional string description = 6 [help_text = "description", default="", max_length = 255, null = False, db_index = False, blank = False];
      required bool admin_state_up = 7 [help_text = "status for this loadbalancer", default = True, null = False, db_index = False, blank = True];
      optional int32 connection_limit = 8 [help_text = "maximum number of connections", default = -1, null = False, db_index = False, blank = False];
@@ -61,7 +61,7 @@ message Loadbalancer (TenantWithContainer){
     optional manytoone listener->Listener:listener= 2 [help_text = "listener id", null = True, db_index = True, blank = True];
     optional manytoone pool->Pool:pool = 3 [help_text = "pool id", null = False, db_index = False, blank = True];
     optional string description = 4 [help_text = "description", default="", max_length = 255, null = True, db_index = False, blank = True];
-    required string vip_subnet_id= 5 [help_text = "vip subnet id", max_length = 36, null = False, db_index = False, blank = False];
+    required manytoone vip_subnet->Network:vip_subnet = 5 [help_text = "vip subnet id", db_index = True, null = True, blank = True];
     optional manytoone svc_port->Port:lbsvcport = 6 [help_text = "lb service port ", null = False, db_index = False, blank = True];
     optional string vip_address = 7 [max_length = 39, content_type = "ip", blank = False, help_text = "LB ip address", null = False, db_index = False];
     required bool admin_state_up = 8 [help_text = "admin status for this loadbalancer", default = True, null = False, db_index = False, blank = False];
