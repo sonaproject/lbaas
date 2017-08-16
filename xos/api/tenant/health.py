@@ -150,12 +150,12 @@ class HealthViewSet(XOSViewSet):
         pools = Pool.objects.filter(health_monitor_id=health.id)
         
         for pool in pools:
-            lbs = Loadbalancer.objects.filter(pool_id=pool.pool_id)
+            lbs = Loadbalancer.objects.filter(pool_id=pool.id)
             for lb in lbs:
                 lb.save()
 
             if lbs.count() == 0:
-                logger.info("pool_id does not exist in Loadbalancer table (pool_id=%s)" % pool.pool_id)
+                logger.info("pool_id does not exist in Loadbalancer table (pool_id=%s)" % pool.id)
 
         if pools.count() == 0:
             logger.info("health_monitor_id does not exist in Pool table (health_monitor_id=%s)" % health.id)

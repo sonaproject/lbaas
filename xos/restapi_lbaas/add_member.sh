@@ -3,7 +3,7 @@
 source ./config.sh
 
 if [[ "$#" -ne 2 ]]; then
-    echo "Syntax: add_member.sh <pool_id> <member_ip>"
+    echo "Syntax: $0 <pool_id> <member_ip>"
     exit -1
 fi
 

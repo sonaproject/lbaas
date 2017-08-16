@@ -4,7 +4,7 @@ set -x
 source ./config.sh
 
 if [[ "$#" -ne 1 ]]; then
-    echo "Syntax: delete_healthmonitor.sh <healthmonitor_id>"
+    echo "Syntax: $0 <healthmonitor_id>"
     exit -1
 fi
 

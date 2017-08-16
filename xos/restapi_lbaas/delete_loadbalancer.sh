@@ -3,7 +3,7 @@
 source ./config.sh
 
 if [[ "$#" -ne 1 ]]; then
-    echo "Syntax: delete_loadbalancer.sh <loadbalancer_id>"
+    echo "Syntax: $0 <loadbalancer_id>"
     exit -1
 fi
 

@@ -18,12 +18,14 @@ defaults
     timeout client  50000
     timeout server  50000
 
+{% if listener.stat_port != 0 %}
 listen stats 
-    bind *:{{listener.stat_port}}
+    bind {{loadbalancer.vip_address}}:{{listener.stat_port}}
     mode http
     stats enable
     stats refresh 2s
     stats uri /stats
+{% endif %}
 
 frontend {{listener.listener_name}}
     option tcplog

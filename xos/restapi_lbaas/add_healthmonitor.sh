@@ -4,7 +4,6 @@ source ./config.sh
 
 DATA=$(cat <<EOF
 {
-    "provider_service": 9,
     "name": "http",
     "type": "HTTP",
     "delay": 5,

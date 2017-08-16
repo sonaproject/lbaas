@@ -3,7 +3,7 @@
 source ./config.sh
 
 if [[ "$#" -ne 2 ]]; then
-    echo "Syntax: add_loadbalancer.sh <listener_id> <pool_id>"
+    echo "Syntax: $0 <listener_id> <pool_id>"
     exit -1
 fi
 

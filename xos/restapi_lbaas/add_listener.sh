@@ -4,10 +4,9 @@ source ./config.sh
 
 DATA=$(cat <<EOF
 {
-    "provider_service": 9,
     "name": "sona_listener",
     "protocol": "HTTP",
-    "protocol_port": 1001,
+    "protocol_port": 10001,
     "stat_port": 10002,
     "description": "sona_listener"
 }

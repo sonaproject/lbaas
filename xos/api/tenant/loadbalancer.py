@@ -265,6 +265,7 @@ class LoadbalancerViewSet(XOSViewSet):
         self.print_message_log("REQ", request)
 
         lb_info = Loadbalancer()
+        lb_info.creator_id = 1
 
         if 'owner' in request.data and request.data["owner"]:
             lb_info.owner_id = request.data["owner"]

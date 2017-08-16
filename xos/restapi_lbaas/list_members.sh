@@ -3,7 +3,7 @@
 source ./config.sh
 
 if [[ "$#" -ne 1 ]]; then
-    echo "Syntax: list_members.sh <pool_id>"
+    echo "Syntax: $0 <pool_id>"
     exit -1
 fi
 

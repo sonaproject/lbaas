@@ -3,7 +3,7 @@
 source ./config.sh
 
 if [[ "$#" -ne 1 ]]; then
-    echo "Syntax: get_listener.sh <listener_id>"
+    echo "Syntax: $0 <listener_id>"
     exit -1
 fi
 

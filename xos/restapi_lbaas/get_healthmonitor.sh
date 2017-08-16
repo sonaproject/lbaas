@@ -3,7 +3,7 @@
 source ./config.sh
 
 if [[ "$#" -ne 1 ]]; then
-    echo "Syntax: get_healthmonitor.sh <health_monitor_id>"
+    echo "Syntax: $0 <health_monitor_id>"
     exit -1
 fi
 

@@ -234,8 +234,12 @@ class SyncLoadbalancer(SyncInstanceUsingAnsible):
             instance = Instance.objects.get(id=o.instance.id)
             instance.updated = time.time()
             instance.volumes = "/usr/local/etc/haproxy"
-            userdata = "--publish-add %d:%d --publish-add %d:%d" \
-                % (listener.protocol_port, listener.protocol_port, listener.stat_port, listener.stat_port)
+
+            userdata = "--publish-add %d:%d " % (listener.protocol_port, listener.protocol_port)
+            if listener.stat_port:
+                usertemp = "--publish-add %d:%d " % (listener.stat_port, listener.stat_port)
+                userdata += usertemp
+
             instance.userData = userdata
             instance.save()
 
