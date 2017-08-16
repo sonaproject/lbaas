@@ -265,8 +265,13 @@ class LoadbalancerViewSet(XOSViewSet):
         self.print_message_log("REQ", request)
 
         lb_info = Loadbalancer()
-        lb_info.creator_id = 1
-        lb_info.owner_id = request.data["owner"]
+
+        if 'owner' in request.data and request.data["owner"]:
+            lb_info.owner_id = request.data["owner"]
+        else:
+            service = Service.objects.get(name = "lbaas")
+            lb_info.owner_id = service.id
+
         lb_info.loadbalancer_id = str(uuid.uuid4())
         lb_info.operating_status = "ONLINE"
         lb_info.provisioning_status= "PENDING_CREATE"
