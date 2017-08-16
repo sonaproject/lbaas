@@ -60,11 +60,10 @@ def update_pool_status(pool_id):
 
 class PoolSerializer(PlusModelSerializer):
     id = ReadOnlyField()
-    provider_service = serializers.PrimaryKeyRelatedField(queryset=LbService.objects.all(), default=get_default_lb_service)
 
     class Meta:
         model = Pool
-        fields = ('id', 'provider_service', 'name', 'subnet_id', 'health_monitor', 'lb_algorithm', 'protocol', 'description', 'admin_state_up')
+        fields = ('id', 'name', 'subnet_id', 'health_monitor', 'lb_algorithm', 'protocol', 'description', 'admin_state_up')
 
 
 class PoolViewSet(XOSViewSet):
@@ -216,7 +215,6 @@ class PoolViewSet(XOSViewSet):
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
         pool = Pool()
-        pool.provider_service_id = request.data["provider_service"]
         pool.pool_id = str(uuid.uuid4())
 
         pool = self.update_pool_info(pool, request)
@@ -268,11 +266,10 @@ class PoolViewSet(XOSViewSet):
 
 class MemberSerializer(PlusModelSerializer):
     id = ReadOnlyField()
-    provider_service = serializers.PrimaryKeyRelatedField(queryset=LbService.objects.all(), default=get_default_lb_service)
 
     class Meta:
         model = Member
-        fields = ('id', 'provider_service', 'memberpool', 'address', 'protocol_port', 'subnet_id', 'weight', 'admin_state_up')
+        fields = ('id', 'memberpool', 'address', 'protocol_port', 'subnet_id', 'weight', 'admin_state_up')
 
 class MemberViewSet(XOSViewSet):
     authentication_classes = (CsrfExemptSessionAuthentication, BasicAuthentication)
@@ -398,7 +395,6 @@ class MemberViewSet(XOSViewSet):
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
         member = Member()
-        member.provider_service_id = request.data["provider_service"]
         member.member_id = str(uuid.uuid4())
         member.operating_status = "ONLINE"
         member.provisioning_status = "ACTIVE"
