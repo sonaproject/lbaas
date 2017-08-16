@@ -32,11 +32,10 @@ def get_default_lb_service():
 
 class ListenerSerializer(PlusModelSerializer):
     id = ReadOnlyField()
-    provider_service = serializers.PrimaryKeyRelatedField(queryset=LbService.objects.all(), default=get_default_lb_service)
 
     class Meta:
         model = Listener
-        fields = ('id', 'provider_service', 'name', 'protocol', 'protocol_port', 'stat_port', 'admin_state_up', 'connection_limit', 'description')
+        fields = ('id', 'name', 'protocol', 'protocol_port', 'stat_port', 'admin_state_up', 'connection_limit', 'description')
 
 class ListenerViewSet(XOSViewSet):
     authentication_classes = (CsrfExemptSessionAuthentication, BasicAuthentication)
@@ -163,7 +162,6 @@ class ListenerViewSet(XOSViewSet):
         self.print_message_log("REQ", request)
 
         listener = Listener()
-        listener.provider_service_id = request.data["provider_service"]
         listener.listener_id = str(uuid.uuid4())
 
         listener = self.update_listener_info(listener, request)
