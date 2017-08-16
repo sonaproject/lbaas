@@ -76,6 +76,8 @@ class SyncLoadbalancer(SyncInstanceUsingAnsible):
                         healths = Healthmonitor.objects.filter(id=pool.health_monitor_id)
                         if len(healths) > 0:
                             lb.provisioning_status = "ACTIVE"
+                            lb.save()
+                            return lb.provisioning_status
                         else:
                             logger.error("Healthmonitor information does not exist (id=%s)" % pool.health_monitor_id)
                             lb.provisioning_status = "ERROR"
