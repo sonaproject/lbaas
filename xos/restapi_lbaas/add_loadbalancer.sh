@@ -12,11 +12,10 @@ POOL_ID=$2
 
 DATA=$(cat <<EOF
 {
-    "owner": 1,
     "name": "sona_loadbalancer",
     "listener": "$LISTENER_ID",
     "pool": "$POOL_ID",
-    "vip_subnet_id": "013d3059-87a4-45a5-91e9-d721068ae0b2",
+    "vip_subnet_id": 1,
     "vip_address": "0.0.0.0",
     "description": "web server loadbalancer"
 }
@@ -26,7 +25,6 @@ EOF
 << "COMMENT"
 DATA=$(cat <<EOF
 {
-    "owner": 1,
     "name": "sona_loadbalancer",
     "vip_subnet_id": "013d3059-87a4-45a5-91e9-d721068ae0b2",
     "vip_address": "10.6.1.198",
