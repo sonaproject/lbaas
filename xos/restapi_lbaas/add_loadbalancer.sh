@@ -2,13 +2,27 @@
 
 source ./config.sh
 
+DATA=""
+
 if [[ "$#" -ne 2 ]]; then
     echo "Syntax: $0 <listener_id> <pool_id>"
-    exit -1
-fi
+    echo "====================================="
+    #exit -1
 
-LISTENER_ID=$1
-POOL_ID=$2
+DATA=$(cat <<EOF
+{
+    "name": "sona_loadbalancer",
+    "vip_subnet_id": 1,
+    "vip_address": "0.0.0.0",
+    "description": "web server loadbalancer"
+}
+EOF
+) 
+
+else 
+
+    LISTENER_ID=$1
+    POOL_ID=$2
 
 DATA=$(cat <<EOF
 {
@@ -20,7 +34,10 @@ DATA=$(cat <<EOF
     "description": "web server loadbalancer"
 }
 EOF
-)
+) 
+
+fi
+
 
 << "COMMENT"
 DATA=$(cat <<EOF
