@@ -236,6 +236,10 @@ class LoadbalancerViewSet(XOSViewSet):
                 lb_info.description = request.data["description"]
             if 'admin_state_up' in request.data and request.data["admin_state_up"]:
                 lb_info.admin_state_up = request.data["admin_state_up"]
+            if 'listener_id' in request.data and request.data["listener_id"]:
+                lb_info.listener_id= request.data["listener_id"]
+            if 'pool_id' in request.data and request.data["pool_id"]:
+                lb_info.pool_id = request.datlb_info.pool_id = request.data["pool_id"]a["pool_id"]
         except KeyError as err:
             logger.error("JSON Key error: %s" % str(err))
             return None
