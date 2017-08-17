@@ -2,7 +2,9 @@ You can follow below commands:
 
 # 사전작업
 아래 명령을 수행하여 XOS Core의 service 정보를 생성한다. 
+```
 docker exec sona_xos_ui_1 python tosca/run.py xosadmin@opencord.org /opt/cord_profile/swarm-node.yaml; pushd /root/cord/build/platform-install; ansible-playbook -i inventory/sona onboard-lbaas-playbook.yml; popd
+```
 
 # 절차 A 
 ```
