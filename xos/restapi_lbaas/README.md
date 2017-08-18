@@ -16,7 +16,7 @@ add_member.sh 1 10.10.2.242 9001    # test web server: 10.10.2.242
 add_loadbalancer.sh 1 1
 ```
 
-# 절차 B
+# 절차 B (이 절차를 따라서 시험하지 마세요. 아직 검증중입니다)
 This is like a openstack flow 
 ```
 add_loadbalancer.sh  
