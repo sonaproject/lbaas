@@ -214,8 +214,6 @@ class LoadbalancerViewSet(XOSViewSet):
                 required_flag = False
             if not 'vip_subnet_id' in request.data or request.data["vip_subnet_id"]=="":
                 required_flag = False
-            if not 'vip_address' in request.data or request.data["vip_address"]=="":
-                required_flag = False
     
         if required_flag == False:
             logger.error("Mandatory fields do not exist!")
