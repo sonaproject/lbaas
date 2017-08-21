@@ -12,7 +12,6 @@ HEALTH_ID=$1
 DATA=$(cat <<EOF
 {
     "name": "sona_pool",
-    "subnet_id": "013d3059-87a4-45a5-91e9-d721068ae0b2",
     "health_monitor_id": "$HEALTH_ID",
     "lb_algorithm": "ROUND_ROBIN",
     "protocol": "HTTP",
