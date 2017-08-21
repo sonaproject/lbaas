@@ -3,6 +3,7 @@ import sys
 import json
 import collections
 import time
+import threading
 from datetime import datetime
 from synchronizers.new_base.SyncInstanceUsingAnsible import SyncInstanceUsingAnsible
 from synchronizers.new_base.modelaccessor import *
@@ -32,6 +33,31 @@ class SyncLoadbalancer(SyncInstanceUsingAnsible):
             return type(data)(map(self.convert_unicode_to_str, data))
         else:
             return data
+
+    def update_lb_provisioning_status(self, instance_id, lb_id):
+        logger.info("[THREAD] instance_id=%s, lb_id=%s" % (instance_id, lb_id))
+        idx = 0
+
+        time.sleep(10)
+
+        while idx<30:
+            idx += 1
+            inst = Instance.objects.get(id = instance_id)
+            logger.info("[THREAD] [%d] inst.backend_status = %s" % (idx, inst.backend_status))
+
+            if idx < 30 and inst.backend_status == "1 - OK":
+                lb = Loadbalancer.objects.get(loadbalancer_id=lb_id)
+                lb.provisioning_status = "ACTIVE"
+                lb.save()
+                return
+
+            elif idx == 30:
+                lb = Loadbalancer.objects.get(loadbalancer_id=lb_id)
+                lb.provisioning_status = "ERROR"
+                lb.save()
+                return
+
+            time.sleep(1)
 
     def update_pool_status(self, pool_id):
         pool_status = ""
@@ -76,8 +102,6 @@ class SyncLoadbalancer(SyncInstanceUsingAnsible):
                         healths = Healthmonitor.objects.filter(id=pool.health_monitor_id)
                         if len(healths) > 0:
                             lb.provisioning_status = "ACTIVE"
-                            lb.save()
-                            return lb.provisioning_status
                         else:
                             logger.error("Healthmonitor information does not exist (id=%s)" % pool.health_monitor_id)
                             lb.provisioning_status = "ERROR"
@@ -127,24 +151,6 @@ class SyncLoadbalancer(SyncInstanceUsingAnsible):
         loadbalancer['loadbalancer_id'] = o.loadbalancer_id
         loadbalancer['lb_name'] = o.name
         loadbalancer['vip_address'] = o.vip_address
-
-        try:
-            network = Network.objects.get(name='public')
-            try:
-                port = Port.objects.get(instance_id=o.instance_id, network_id=network.id)
-                loadbalancer['vip_address'] = port.ip
-                try:
-                    lb = Loadbalancer.objects.get(loadbalancer_id=o.loadbalancer_id)
-                    lb.vip_address = port.ip
-                    lb.save()
-                except Exception as err:
-                    logger.error("Loadbalancer information does not exist(loadbalancer_id=%s)" % o.loadbalancer_id)
-
-            except Exception as err:
-                logger.error("Port information does not exist(instance_id=%d, network_id=%d)" % (o.instance_id, network.id))
-        except Exception as err:
-            logger.error("Network information does not exist")
-
         fields['loadbalancer'] = json.dumps(loadbalancer, indent=4)
        
         logger.info(">>>>> Loadbalancer")
@@ -244,11 +250,13 @@ class SyncLoadbalancer(SyncInstanceUsingAnsible):
 
             instance.userData = userdata
             instance.save()
-
         except Exception as e:
             logger.log_exc("Instance.objects.get() failed - %s" % e)
         
         fields = self.convert_unicode_to_str(fields)
+
+        lb_thr = threading.Thread(target=self.update_lb_provisioning_status, args=(o.instance_id, o.loadbalancer_id, ))
+        lb_thr.start()
 
         return fields
 
