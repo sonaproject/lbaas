@@ -207,18 +207,18 @@ class PoolViewSet(XOSViewSet):
         self.print_message_log("REQ", request)
 
         if 'health_monitor_id' in request.data and request.data["health_monitor_id"]:
-	        try:
-	            health = Healthmonitor.objects.get(id=request.data["health_monitor_id"])
-    	    except Exception as err:
-        		logger.error("%s" % str(err))
-        		return Response("Error: health_monitor_id is not present in table lbaas_healthmonitor", status=status.HTTP_406_NOT_ACCEPTABLE)
+            try:
+                health = Healthmonitor.objects.get(id=request.data["health_monitor_id"])
+            except Exception as err:
+                logger.error("%s" % str(err))
+                return Response("Error: health_monitor_id is not present in table lbaas_healthmonitor", status=status.HTTP_406_NOT_ACCEPTABLE)
 
         pool = Pool()
         pool.pool_id = str(uuid.uuid4())
 
         pool = self.update_pool_info(pool, request)
         if pool == None:
-	        return Response("Error: Mandatory fields not exist!", status=status.HTTP_400_BAD_REQUEST)
+            return Response("Error: Mandatory fields not exist!", status=status.HTTP_400_BAD_REQUEST)
         
         rsp_data, pool_obj = self.get_rsp_body(pool.pool_id)
 
@@ -262,21 +262,21 @@ class PoolViewSet(XOSViewSet):
     def destroy(self, request, pk=None):
         self.print_message_log("REQ", request)
 
-    	try:
-	        pool = Pool.objects.get(pool_id=pk)
-    	except Exception as err:
-	        logger.error("%s" % str(err))
+        try:
+            pool = Pool.objects.get(pool_id=pk)
+        except Exception as err:
+            logger.error("%s" % str(err))
             return Response("Error: pool_id does not exist in Pool table", status=status.HTTP_406_NOT_ACCEPTABLE)
 
-    	try:
-	        lb = Loadbalancer.objects.get(pool_id=pool.id)
-    	    return Response("Error: There is a loadbalancer that uses pool_id", status=status.HTTP_406_NOT_ACCEPTABLE)
-    	except Exception as err:
+        try:
+            lb = Loadbalancer.objects.get(pool_id=pool.id)
+            return Response("Error: There is a loadbalancer that uses pool_id", status=status.HTTP_406_NOT_ACCEPTABLE)
+        except Exception as err:
             logger.error("%s" % str(err))
 
-	    members = Member.objects.filter(memberpool_id=pool.id)
+        members = Member.objects.filter(memberpool_id=pool.id)
     	if members.count() > 0:
-	        return Response("Error: There is a member that uses pool_id", status=status.HTTP_406_NOT_ACCEPTABLE)
+            return Response("Error: There is a member that uses pool_id", status=status.HTTP_406_NOT_ACCEPTABLE)
 
         self.update_loadbalancer_model(pk)
         Pool.objects.filter(pool_id=pk).delete()
@@ -403,7 +403,7 @@ class MemberViewSet(XOSViewSet):
             pool = Pool.objects.get(id=request.data["memberpool"])
         except Exception as err:
             logger.error("%s (memberpool_id=%s)" % ((str(err), request.data["memberpool"])))
-	    return Response("Error: pool_id is not present in table lbaas_pool", status=status.HTTP_406_NOT_ACCEPTABLE)
+            return Response("Error: pool_id is not present in table lbaas_pool", status=status.HTTP_406_NOT_ACCEPTABLE)
 
         member = Member()
         member.member_id = str(uuid.uuid4())
@@ -412,7 +412,7 @@ class MemberViewSet(XOSViewSet):
 
         member = self.update_member_info(member, request)
         if member == None:
-	        return Response("Error: Mandatory fields not exist!", status=status.HTTP_400_BAD_REQUEST)
+            return Response("Error: Mandatory fields not exist!", status=status.HTTP_400_BAD_REQUEST)
 
         rsp_data, member_obj = self.get_rsp_body(member.member_id)
 
@@ -444,7 +444,7 @@ class MemberViewSet(XOSViewSet):
 
         member = self.update_member_info(member, request)
         if member == None:
-	        return Response("Error: Mandatory fields not exist!", status=status.HTTP_400_BAD_REQUEST)
+            return Response("Error: Mandatory fields not exist!", status=status.HTTP_400_BAD_REQUEST)
 
         rsp_data, member_obj = self.get_rsp_body(pk)
  
@@ -457,17 +457,17 @@ class MemberViewSet(XOSViewSet):
     def destroy(self, request, pool_id=None, pk=None):
         self.print_message_log("REQ", request)
 
-    	try:
-	        pool = Pool.objects.get(pool_id=pool_id)
-    	except Exception as err:
-   	        logger.error("%s" % str(err))
-    	    return Response("Error: pool_id does not exist in Pool table", status=status.HTTP_406_NOT_ACCEPTABLE)
+        try:
+            pool = Pool.objects.get(pool_id=pool_id)
+        except Exception as err:
+            logger.error("%s" % str(err))
+            return Response("Error: pool_id does not exist in Pool table", status=status.HTTP_406_NOT_ACCEPTABLE)
 
-    	try:
-	        member = Member.objects.get(member_id=pk)
-    	except Exception as err:
-   	        logger.error("%s" % str(err))
-    	    return Response("Error: member_id does not exist in Member table", status=status.HTTP_406_NOT_ACCEPTABLE)
+        try:
+            member = Member.objects.get(member_id=pk)
+        except Exception as err:
+            logger.error("%s" % str(err))
+            return Response("Error: member_id does not exist in Member table", status=status.HTTP_406_NOT_ACCEPTABLE)
 
         update_pool_status(pool_id)
         self.update_loadbalancer_model(pool_id)

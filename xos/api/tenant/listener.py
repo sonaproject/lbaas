@@ -213,14 +213,14 @@ class ListenerViewSet(XOSViewSet):
     def destroy(self, request, pk=None):
         self.print_message_log("REQ", request)
 
-	    try:
-	        listener = Listener.objects.get(listener_id=pk)
-    	except Exception as err:
+        try:
+            listener = Listener.objects.get(listener_id=pk)
+        except Exception as err:
             logger.error("%s" % str(err))
-	        return Response("Error: listener_id does not exist in Listener table", status=status.HTTP_406_NOT_ACCEPTABLE)
+            return Response("Error: listener_id does not exist in Listener table", status=status.HTTP_406_NOT_ACCEPTABLE)
 
-    	try:
-	        lb = Loadbalancer.objects.get(listener_id=listener.id)
+        try:
+            lb = Loadbalancer.objects.get(listener_id=listener.id)
             return Response("Error: There is a loadbalancer that uses listener_id", status=status.HTTP_406_NOT_ACCEPTABLE)
         except Exception as err:
             logger.error("%s" % str(err))
