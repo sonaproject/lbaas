@@ -13,11 +13,9 @@ PORT=$3
 
 DATA=$(cat <<EOF
 {
-    "provider_service": 9,
     "memberpool": "$POOL_ID",
     "address": "$MEMBER_IP",
-    "protocol_port": $PORT,
-    "subnet_id": "013d3059-87a4-45a5-91e9-d721068ae0b2"
+    "protocol_port": $PORT
 }
 EOF
 )
