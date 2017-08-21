@@ -6,6 +6,7 @@ from rest_framework import generics
 from rest_framework import status
 from core.models import *
 from django.forms import widgets
+from django.conf import settings
 from xos.apibase import XOSListCreateAPIView, XOSRetrieveUpdateDestroyAPIView, XOSPermissionDenied
 from api.xosapi_helpers import PlusModelSerializer, XOSViewSet, ReadOnlyField
 
@@ -20,6 +21,8 @@ import json
 import uuid
 import traceback
 import pool
+
+settings.DEBUG = False
 
 class CsrfExemptSessionAuthentication(SessionAuthentication):
     def enforce_csrf(self, request):
@@ -128,12 +131,11 @@ def check_loadbalancer_model_all_info():
 class LoadbalancerSerializer(PlusModelSerializer):
         id = ReadOnlyField()
         owner = serializers.PrimaryKeyRelatedField(queryset=LbService.objects.all(), default=get_default_lb_service)
-        vip_subnet_id = serializers.CharField(required=False)
         vip_address = serializers.CharField(required=True)
 
         class Meta:
             model = Loadbalancer
-            fields = ('id', 'owner', 'name', 'listener', 'pool', 'vip_subnet_id', 'vip_address', 'description', 'admin_state_up')
+            fields = ('id', 'owner', 'name', 'listener', 'pool', 'vip_network_name', 'vip_address', 'description', 'admin_state_up')
 
 class LoadbalancerViewSet(XOSViewSet):
     authentication_classes = (CsrfExemptSessionAuthentication, BasicAuthentication)
@@ -189,7 +191,7 @@ class LoadbalancerViewSet(XOSViewSet):
             listener_list.append(listener_obj)
 
         lb_obj['vip_address'] = lb_info.vip_address
-        lb_obj['vip_subnet_id'] = lb_info.vip_subnet_id
+        lb_obj['vip_network_name'] = lb_info.vip_network_name
         lb_obj['loadbalancer_id'] = lb_info.loadbalancer_id
         lb_obj['operating_status'] = lb_info.operating_status
         lb_obj['loadbalancer_name'] = lb_info.name
@@ -212,11 +214,11 @@ class LoadbalancerViewSet(XOSViewSet):
         if request.method == "POST":
             if not 'name' in request.data or request.data["name"]=="":
                 required_flag = False
-            if not 'vip_subnet_id' in request.data or request.data["vip_subnet_id"]=="":
+            if not 'vip_network_name' in request.data or request.data["vip_network_name"]=="":
                 required_flag = False
     
         if required_flag == False:
-            logger.error("Mandatory fields do not exist!")
+            logger.error("Mandatory fields not exist!")
             return None
 
         try:
@@ -226,8 +228,8 @@ class LoadbalancerViewSet(XOSViewSet):
                 lb_info.listener_id= request.data["listener"]
             if 'pool' in request.data and request.data["pool"]:
                 lb_info.pool_id= request.data["pool"]
-            if 'vip_subnet_id' in request.data and request.data["vip_subnet_id"]:
-                lb_info.vip_subnet_id = request.data["vip_subnet_id"]
+            if 'vip_network_name' in request.data and request.data["vip_network_name"]:
+                lb_info.vip_network_name = request.data["vip_network_name"]
             if 'vip_address' in request.data and request.data["vip_address"]:
                 lb_info.vip_address = request.data["vip_address"]
             if 'description' in request.data and request.data["description"]:
@@ -275,13 +277,33 @@ class LoadbalancerViewSet(XOSViewSet):
             service = Service.objects.get(name = "lbaas")
             lb_info.owner_id = service.id
 
+        if 'vip_network_name' in request.data and request.data["vip_network_name"]:
+            vip_network_name = request.data["vip_network_name"]
+            network = Network.objects.get(name=vip_network_name)
+            logger.info("network.id=%s" % network.id)
+            lb_info.vip_subnet_id = network.id
+
+    	if 'listener_id' in request.data and request.data["listener_id"]:
+	    try:
+                listener = Listener.objects.get(id=request.data["listener_id"])
+            except Exception as err:
+                logger.error("%s" % str(err))
+                return Response("Error: listener_id does not exist in Listener table", status=status.HTTP_406_NOT_ACCEPTABLE)
+
+	if 'pool_id' in request.data and request.data["pool_id"]:
+	    try:
+                pool = Pool.objects.get(id=request.data["pool_id"])
+            except Exception as err:
+                logger.error("%s" % str(err))
+                return Response("Error: pool_id does not exist in Pool table", status=status.HTTP_406_NOT_ACCEPTABLE)
+
         lb_info.loadbalancer_id = str(uuid.uuid4())
         lb_info.operating_status = "ONLINE"
         lb_info.provisioning_status= "PENDING_CREATE"
 
         lb_info = self.update_loadbalancer_info(lb_info, request)
         if lb_info == None:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            return Response("Error: Mandatory fields not exist!", status=status.HTTP_400_BAD_REQUEST)
 
         rsp_data, lb_obj = self.get_rsp_body(lb_info.loadbalancer_id)
 
@@ -291,6 +313,12 @@ class LoadbalancerViewSet(XOSViewSet):
     # GET: /api/tenant/loadbalancers/{loadbalancer_id}
     def retrieve(self, request, pk=None):
         self.print_message_log("REQ", request)
+
+	try:
+	    lb_info = Loadbalancer.objects.get(loadbalancer_id=pk)
+	except Exception as err:
+	    logger.error("%s" % str(err))
+	    return Response("Error: loadbalancer_id does not exist in Loadbalancer table", status=status.HTTP_406_NOT_ACCEPTABLE)
 
         rsp_data, lb_obj = self.get_rsp_body(pk)
 
@@ -304,7 +332,7 @@ class LoadbalancerViewSet(XOSViewSet):
 
         lb_info = self.update_loadbalancer_info(lb_info, request)
         if lb_info == None:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            return Response("Error: Mandatory fields not exist!", status=status.HTTP_400_BAD_REQUEST)
 
         rsp_data, lb_obj = self.get_rsp_body(pk)
 
@@ -315,7 +343,12 @@ class LoadbalancerViewSet(XOSViewSet):
     def destroy(self, request, pk=None):
         self.print_message_log("REQ", request)
         
-        lb_info = Loadbalancer.objects.get(loadbalancer_id=pk)
+	try:
+            lb_info = Loadbalancer.objects.get(loadbalancer_id=pk)
+	except Exception as err:
+	    logger.error("%s" % str(err))
+	    return Response("Error: loadbalancer_id does not exist in Loadbalancer table", status=status.HTTP_406_NOT_ACCEPTABLE)
+
         ins = Instance.objects.get(id=lb_info.instance_id)
         ins.deleted = True
         ins.save()

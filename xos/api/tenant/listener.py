@@ -6,6 +6,7 @@ from rest_framework import generics
 from rest_framework import status
 from core.models import *
 from django.forms import widgets
+from django.conf import settings
 from xos.apibase import XOSListCreateAPIView, XOSRetrieveUpdateDestroyAPIView, XOSPermissionDenied
 from api.xosapi_helpers import PlusModelSerializer, XOSViewSet, ReadOnlyField
 
@@ -19,6 +20,8 @@ from services.lbaas.models import LbService, Loadbalancer, Listener, Pool, Membe
 import json
 import uuid
 import traceback
+
+settings.DEBUG = False
 
 class CsrfExemptSessionAuthentication(SessionAuthentication):
     def enforce_csrf(self, request):
@@ -166,7 +169,7 @@ class ListenerViewSet(XOSViewSet):
 
         listener = self.update_listener_info(listener, request)
         if listener == None:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            return Response("Error: Mandatory fields not exist!", status=status.HTTP_400_BAD_REQUEST)
 
         rsp_data, listener_obj = self.get_rsp_body(listener.listener_id)
 
@@ -178,6 +181,13 @@ class ListenerViewSet(XOSViewSet):
     # GET: /api/tenant/listeners/{listener_id}
     def retrieve(self, request, pk=None):
         self.print_message_log("REQ", request)
+
+        try:
+            listener = Listener.objects.get(listener_id=pk)
+        except Exception as err:
+            logger.error("%s" % str(err))
+            return Response("Error: listener_id does not exist in Listener table", status=status.HTTP_406_NOT_ACCEPTABLE)
+
         rsp_data, listener_obj = self.get_rsp_body(pk)
 
         self.print_message_log("RSP", rsp_data)
@@ -190,7 +200,7 @@ class ListenerViewSet(XOSViewSet):
 
         listener = self.update_listener_info(listener, request)
         if listener == None:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            return Response("Error: Mandatory fields not exist!", status=status.HTTP_400_BAD_REQUEST)
 
         rsp_data, listener_obj = self.get_rsp_body(pk)
 
@@ -202,6 +212,18 @@ class ListenerViewSet(XOSViewSet):
     # DELETE: /api/tenant/listeners/{listener_id}
     def destroy(self, request, pk=None):
         self.print_message_log("REQ", request)
+
+	try:
+	    listener = Listener.objects.get(listener_id=pk)
+	except Exception as err:
+            logger.error("%s" % str(err))
+	    return Response("Error: listener_id does not exist in Listener table", status=status.HTTP_406_NOT_ACCEPTABLE)
+
+	try:
+	    lb = Loadbalancer.objects.get(listener_id=listener.id)
+            return Response("Error: There is a loadbalancer that uses listener_id", status=status.HTTP_406_NOT_ACCEPTABLE)
+        except Exception as err:
+            logger.error("%s" % str(err))
 
         self.update_loadbalancer_model(pk)
         Listener.objects.filter(listener_id=pk).delete()
