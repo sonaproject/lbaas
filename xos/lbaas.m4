@@ -40,6 +40,9 @@ node_types:
             vip_subnet_id:
                 type: string
                 required: false
+            vip_network_name:
+                type: string
+                required: false
             vip_address:
                 type: string
                 required: false
@@ -113,9 +116,6 @@ node_types:
             admin_state_up:
                 type: boolean
                 required: false
-            subnet_id:
-                type: string
-                required: false
             status:
                 type: string
                 required: false
@@ -131,9 +131,6 @@ node_types:
                 type: string
                 required: false
             pool_id:
-                type: string
-                required: false
-            subnet_id:
                 type: string
                 required: false
             address:
