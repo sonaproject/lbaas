@@ -12,7 +12,7 @@ if [[ "$#" -ne 2 ]]; then
 DATA=$(cat <<EOF
 {
     "name": "sona_loadbalancer",
-    "vip_subnet_id": 1,
+    "vip_network_name": "kuryr-net",
     "description": "web server loadbalancer"
 }
 EOF
@@ -26,9 +26,9 @@ else
 DATA=$(cat <<EOF
 {
     "name": "sona_loadbalancer",
-    "listener": "$LISTENER_ID",
-    "pool": "$POOL_ID",
-    "vip_subnet_id": 1,
+    "listener_id": "$LISTENER_ID",
+    "pool_id": "$POOL_ID",
+    "vip_network_name": "kuryr-net",
     "description": "web server loadbalancer"
 }
 EOF
