@@ -186,7 +186,7 @@ class HealthViewSet(XOSViewSet):
 
         health = self.update_health_info(health, request)
         if health == None:
-   	    return Response("Error: Mandatory fields not exist!", status=status.HTTP_400_BAD_REQUEST)
+      	    return Response("Error: Mandatory fields not exist!", status=status.HTTP_400_BAD_REQUEST)
 
         rsp_data, health_obj = self.get_rsp_body(health.health_monitor_id)
 
@@ -230,20 +230,20 @@ class HealthViewSet(XOSViewSet):
     def destroy(self, request, pk=None):
         self.print_message_log("REQ", request)
 
-	try:
+	    try:
     	    health = Healthmonitor.objects.get(health_monitor_id=pk)
-	except Exception as err:
-	    logger.error("%s" % str(err))
+    	except Exception as err:
+	        logger.error("%s" % str(err))
             return Response("Error: health_monitor_id does not exist in Healthmonitor table", status=status.HTTP_406_NOT_ACCEPTABLE)
 
-	try:
+    	try:
             pool = Pool.objects.get(health_monitor_id=health.id)
             return Response("Error: There is a pool that uses healthmontor_id", status=status.HTTP_406_NOT_ACCEPTABLE)
         except Exception as err:
-	    logger.error("%s" % str(err))
+	        logger.error("%s" % str(err))
  
         self.update_loadbalancer_model(pk)
-	Healthmonitor.objects.filter(health_monitor_id=pk).delete()
+    	Healthmonitor.objects.filter(health_monitor_id=pk).delete()
        
         self.print_message_log("RSP", "")
         return Response(status=status.HTTP_204_NO_CONTENT)
