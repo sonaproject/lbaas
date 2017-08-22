@@ -160,7 +160,7 @@ class PoolViewSet(XOSViewSet):
         try:
             if 'name' in request.data and request.data["name"]:
                 pool.name = request.data["name"]
-            if 'health_monitor_id' in request.data and request.data["health_monitor_id"]:
+            if 'health_monitor_id' in request.data:
                 pool.health_monitor_id = request.data["health_monitor_id"]
             if 'lb_algorithm' in request.data and request.data["lb_algorithm"]:
                 pool.lb_algorithm = request.data["lb_algorithm"]
