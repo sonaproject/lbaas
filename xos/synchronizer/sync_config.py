@@ -29,7 +29,7 @@ def update_lb_vip_addr(instance_id, vip_address):
 
         ins = ServiceInstance.objects.get(id=instance_id)
         if ins.updated != ins.enacted:
-            break;
+            break
 
     logger.info("[Thread] lb.vip_address = %s" % lb.vip_address)
 
