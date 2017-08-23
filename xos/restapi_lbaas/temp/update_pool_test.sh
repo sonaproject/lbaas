@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source ./config.sh
+source .././config.sh
 
 if [[ "$#" -ne 2 ]]; then
     echo "Syntax: $0 <pool_id> <HEALTH_ID>"
