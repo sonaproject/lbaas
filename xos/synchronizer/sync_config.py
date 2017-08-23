@@ -57,7 +57,7 @@ def check_lb_vip_address():
         if len(lbs) == 0:
             continue
 
-        ports = Port.objects.filter(id=lbs[0].vip_subnet_id)
+        ports = Port.objects.filter(network_id=lbs[0].vip_subnet_id)
         logger.info("[Thread] ports.count = %s" % len(ports))
 
         for port in ports:
