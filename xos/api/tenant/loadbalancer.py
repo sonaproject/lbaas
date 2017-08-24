@@ -391,6 +391,7 @@ class LoadbalancerViewSet(XOSViewSet):
         
         try:
             lb_info = Loadbalancer.objects.get(loadbalancer_id=pk)
+            logger.info("instance_id=%s, vip_address=%s" % (lb_info.instance_id, lb_info.vip_address))
         except Exception as err:
             logger.error("%s" % str(err))
             return Response("Error: loadbalancer_id does not exist in Loadbalancer table", status=status.HTTP_406_NOT_ACCEPTABLE)
@@ -400,6 +401,7 @@ class LoadbalancerViewSet(XOSViewSet):
         ins.save()
 	
         Loadbalancer.objects.filter(loadbalancer_id=pk).delete()
+        Port.objects.filter(instance_id=lb_info.instance_id, ip=lb_info.vip_address).delete()
 
         self.print_message_log("RSP", "")
         return Response(status=status.HTTP_204_NO_CONTENT)
