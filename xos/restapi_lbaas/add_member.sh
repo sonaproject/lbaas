@@ -13,7 +13,7 @@ PORT=$3
 
 DATA=$(cat <<EOF
 {
-    "memberpool": "$POOL_ID",
+    "ptr_pool_id": "$POOL_ID",
     "address": "$MEMBER_IP",
     "protocol_port": $PORT
 }

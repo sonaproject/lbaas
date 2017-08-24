@@ -34,36 +34,40 @@ message Pool (XOSBase){
     required string name = 1 [help_text = "pool name", max_length = 255, null = False, db_index = False, blank = False];
     optional string pool_id = 2 [help_text = "pool id", max_length = 36, null = False, db_index = False, blank = True];
     optional manytoone health_monitor->Healthmonitor:health_monitor = 3 [help_text = "healthmonitor id", max_length = 36, null = False, db_index = True, blank = True];
-    required string lb_algorithm = 4 [default = "ROUND_ROBIN", choices = "(('ROUND_ROBIN', 'ROUND_ROBIN'), ('LEAST_CONNECTIONS', 'LEAST_CONNECTIONS'), ('SOURCE_IP', 'SOURCE_IP'))", max_length = 30, blank = False, null = False, db_index = False];
-    optional string description = 5 [help_text = "description", max_length = 255, null = False, db_index = False, blank = False];
-    optional string protocol = 6 [default = "http", choices = "(('HTTP', 'HTTP'), ('HTTPS', 'HTTPS'), ('TCP', 'TCP'))", max_length = 30, blank = False, null = False, db_index = False];
-    required bool admin_state_up = 7 [help_text = "status for this pool", default = True, null = False, db_index = False, blank = True];
-    optional string status = 8 [help_text = "operating status for this pool", default="PENDING_CREATE", max_length = 36, null = True, db_index = False, blank = True];
+    optional string ptr_health_monitor_id = 4 [help_text = "healthmonitor id", max_length = 36, null = False, db_index = True, blank = True];
+    required string lb_algorithm = 5 [default = "ROUND_ROBIN", choices = "(('ROUND_ROBIN', 'ROUND_ROBIN'), ('LEAST_CONNECTIONS', 'LEAST_CONNECTIONS'), ('SOURCE_IP', 'SOURCE_IP'))", max_length = 30, blank = False, null = False, db_index = False];
+    optional string description = 6 [help_text = "description", max_length = 255, null = False, db_index = False, blank = False];
+    optional string protocol = 7 [default = "http", choices = "(('HTTP', 'HTTP'), ('HTTPS', 'HTTPS'), ('TCP', 'TCP'))", max_length = 30, blank = False, null = False, db_index = False];
+    required bool admin_state_up = 8 [help_text = "status for this pool", default = True, null = False, db_index = False, blank = True];
+    optional string status = 9 [help_text = "operating status for this pool", default="PENDING_CREATE", max_length = 36, null = True, db_index = False, blank = True];
 }
 
 message Member (XOSBase){
     required string name = 1 [help_text = "pool name", max_length = 255, null = False, db_index = False, blank = False];
     optional string member_id = 2 [help_text = "member id", max_length = 36, null = False, db_index = False, blank = True];
-    required manytoone memberpool->Pool:memberpool = 3 [help_text = "pool id", null = False, db_index = True, blank = True];
-    required string address = 4 [help_text = "ip address of the member", max_length = 255, null = False, db_index = False, blank = False];
-    required int32 protocol_port = 5 [help_text = "listening port of the member", null = False, db_index = False, blank = False];
-    optional int32 weight = 6 [help_text = "member weight", default=1, null = False, db_index = False, blank = False];
-    required bool admin_state_up = 7 [help_text = "admin status for this member", default = True, null = False, db_index = False, blank = True];
-    optional string operating_status = 8 [help_text = "operating status for this member", default="ONLINE", max_length = 36, null = True, db_index = False, blank = False];
-    optional string provisioning_status = 9 [help_text = "provisioning status for this member", default="ACTIVE", choices = "(('ACTIVE', 'ACTIVE'), ('PENDING_CREATE', 'PENDING_CREATE'), ('PENDING_UPDATE', 'PENDING_UPDATE'), ('PENDING_DELETE', 'PENDING_DELETE') , ('ERROR', 'ERROR'))", max_length = 30, null = True, db_index = False, blank = True];
+    optional manytoone memberpool->Pool:memberpool = 3 [help_text = "pool id", null = False, db_index = True, blank = True];
+    required string ptr_pool_id = 4 [help_text = "pool id", max_length = 36, null = False, db_index = True, blank = True];
+    required string address = 5 [help_text = "ip address of the member", max_length = 255, null = False, db_index = False, blank = False];
+    required int32 protocol_port = 6 [help_text = "listening port of the member", null = False, db_index = False, blank = False];
+    optional int32 weight = 7 [help_text = "member weight", default=1, null = False, db_index = False, blank = False];
+    required bool admin_state_up = 8 [help_text = "admin status for this member", default = True, null = False, db_index = False, blank = True];
+    optional string operating_status = 9 [help_text = "operating status for this member", default="ONLINE", max_length = 36, null = True, db_index = False, blank = False];
+    optional string provisioning_status = 10 [help_text = "provisioning status for this member", default="ACTIVE", choices = "(('ACTIVE', 'ACTIVE'), ('PENDING_CREATE', 'PENDING_CREATE'), ('PENDING_UPDATE', 'PENDING_UPDATE'), ('PENDING_DELETE', 'PENDING_DELETE') , ('ERROR', 'ERROR'))", max_length = 30, null = True, db_index = False, blank = True];
 }
 
 message Loadbalancer (TenantWithContainer){
     option verbose_name = "Lb Tenant";
     optional string loadbalancer_id = 1 [help_text = "loadbalancer id", max_length = 36, null = False, db_index = False, blank = False];
     optional manytoone listener->Listener:listener= 2 [help_text = "listener id", null = True, db_index = True, blank = True];
-    optional manytoone pool->Pool:pool = 3 [help_text = "pool id", null = False, db_index = True, blank = True];
-    optional string description = 4 [help_text = "description", default="", max_length = 255, null = True, db_index = False, blank = True];
-    optional manytoone vip_subnet->Network:vip_subnet = 5 [help_text = "vip subnet id", db_index = True, null = True, blank = True];
-    required string vip_network_name = 6 [help_text = "vip network name", max_length = 255, null = False, db_index = False, blank = False];
-    optional manytoone svc_port->Port:lbsvcport = 7 [help_text = "lb service port ", null = False, db_index = True, blank = True];
-    optional string vip_address = 8 [default="0.0.0.0", max_length = 39, content_type = "ip", blank = False, help_text = "LB ip address", null = False, db_index = False];
-    required bool admin_state_up = 9 [help_text = "admin status for this loadbalancer", default = True, null = False, db_index = False, blank = False];
-    optional string operating_status = 10 [help_text = "operating status for this loadbalancer", default="ONLINE", max_length = 36, null = True, db_index = False, blank = False];
-    optional string provisioning_status = 11 [help_text = "status for this loadbalancer", default="PENDING_CREATE", choices = "(('ACTIVE', 'ACTIVE'), ('PENDING_CREATE', 'PENDING_CREATE'), ('PENDING_UPDATE', 'PENDING_UPDATE'), ('PENDING_DELETE', 'PENDING_DELETE') , ('ERROR', 'ERROR'))", max_length = 30, null = True, db_index = False, blank = True];
+    optional string ptr_listener_id= 3 [help_text = "listener id", max_length = 36, null = True, db_index = True, blank = True];
+    optional manytoone pool->Pool:pool = 4 [help_text = "pool id", null = False, db_index = True, blank = True];
+    optional string ptr_pool_id = 5 [help_text = "pool id", max_length = 36, null = False, db_index = True, blank = True];
+    optional string description = 6 [help_text = "description", default="", max_length = 255, null = True, db_index = False, blank = True];
+    optional manytoone vip_subnet->Network:vip_subnet = 7 [help_text = "vip subnet id", db_index = True, null = True, blank = True];
+    required string vip_network_name = 8 [help_text = "vip network name", max_length = 255, null = False, db_index = False, blank = False];
+    optional manytoone svc_port->Port:lbsvcport = 9 [help_text = "lb service port ", null = False, db_index = True, blank = True];
+    optional string vip_address = 10 [default="0.0.0.0", max_length = 39, content_type = "ip", blank = False, help_text = "LB ip address", null = False, db_index = False];
+    required bool admin_state_up = 11 [help_text = "admin status for this loadbalancer", default = True, null = False, db_index = False, blank = False];
+    optional string operating_status = 12 [help_text = "operating status for this loadbalancer", default="ONLINE", max_length = 36, null = True, db_index = False, blank = False];
+    optional string provisioning_status = 13 [help_text = "status for this loadbalancer", default="PENDING_CREATE", choices = "(('ACTIVE', 'ACTIVE'), ('PENDING_CREATE', 'PENDING_CREATE'), ('PENDING_UPDATE', 'PENDING_UPDATE'), ('PENDING_DELETE', 'PENDING_DELETE') , ('ERROR', 'ERROR'))", max_length = 30, null = True, db_index = False, blank = True];
 }

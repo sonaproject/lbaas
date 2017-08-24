@@ -11,7 +11,10 @@ HEALTH_ID=$1
 
 DATA=$(cat <<EOF
 {
-    "type": "TCP"
+    "ptr_health_monitor_id": "$HEALTH_ID",
+    "delay": 7,
+    "max_retries": 7,
+    "timeout": 7
 }
 EOF
 )

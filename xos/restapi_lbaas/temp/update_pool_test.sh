@@ -12,7 +12,7 @@ HEALTH_ID=$2
 
 DATA=$(cat <<EOF
 {
-    "health_monitor_id": null
+    "ptr_health_monitor_id": null
 }
 EOF
 )

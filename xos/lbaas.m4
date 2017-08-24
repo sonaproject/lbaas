@@ -31,7 +31,13 @@ node_types:
             listener_id:
                 type: string
                 required: false
+            ptr_listener_id:
+                type: string
+                required: false
             pool_id:
+                type: string
+                required: false
+            ptr_pool_id:
                 type: string
                 required: false
             description:
@@ -104,6 +110,9 @@ node_types:
             health_monitor_id:
                 type: string
                 required: false
+            ptr_health_monitor_id:
+                type: string
+                required: false
             lb_algorithm:
                 type: string
                 required: false
@@ -120,7 +129,6 @@ node_types:
                 type: string
                 required: false
 
-
     tosca.nodes.Member:
         derived_from: tosca.nodes.Root
         description: >
@@ -131,6 +139,9 @@ node_types:
                 type: string
                 required: false
             pool_id:
+                type: string
+                required: false
+            ptr_pool_id:
                 type: string
                 required: false
             address:

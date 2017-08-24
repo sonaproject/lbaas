@@ -3,7 +3,7 @@
 source ./config.sh
 
 if [[ "$#" -ne 1 ]]; then
-    echo "Syntax: $0"
+    #echo "Syntax: $0"
 
 DATA=$(cat <<EOF
 {
@@ -16,13 +16,13 @@ EOF
 )
 
 else
-    echo "Syntax: $0 <health_monitor_id>"
+    #echo "Syntax: $0 <health_monitor_id>"
     HEALTH_ID=$1
 
 DATA=$(cat <<EOF
 {
     "name": "sona_pool",
-    "health_monitor_id": "$HEALTH_ID",
+    "ptr_health_monitor_id": "$HEALTH_ID",
     "lb_algorithm": "ROUND_ROBIN",
     "protocol": "HTTP",
     "description": "sona_pool"

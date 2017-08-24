@@ -78,7 +78,7 @@ class HealthViewSet(XOSViewSet):
         pool_obj = {}
         root_obj['health_monitor'] = health_obj
 
-        health_obj['id'] = health.id
+        #health_obj['id'] = health.id
         health_obj['name'] = health.name
         health_obj['admin_state_up'] = health.admin_state_up
         health_obj['delay'] = health.delay
@@ -89,10 +89,11 @@ class HealthViewSet(XOSViewSet):
 
         health_obj['pools'] = pool_list
         try:
-            pool = Pool.objects.get(health_monitor_id=health.id)
-            pool_obj['status'] = pool.status
-            pool_obj['pool_id'] = pool.pool_id
-            pool_list.append(pool_obj)
+            pools = Pool.objects.filter(health_monitor_id=health.id)
+            for pool in pools:
+                pool_obj['status'] = pool.status
+                pool_obj['pool_id'] = pool.pool_id
+                pool_list.append(pool_obj)
         except Exception as err:
             logger.error("%s (health_monitor_id=%s)" % (str(err), health_monitor_id))
 

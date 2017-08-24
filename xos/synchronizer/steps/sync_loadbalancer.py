@@ -43,7 +43,7 @@ class SyncLoadbalancer(SyncInstanceUsingAnsible):
         while idx<30:
             idx += 1
             inst = Instance.objects.get(id = instance_id)
-            logger.info("[THREAD] [%d] inst.backend_status = %s" % (idx, inst.backend_status))
+            logger.info("[THREAD] [%d] instance_id=%s, inst.backend_status=%s" % (idx, instance_id, inst.backend_status))
 
             if idx < 30 and inst.backend_status == "1 - OK":
                 lb = Loadbalancer.objects.get(loadbalancer_id=lb_id)

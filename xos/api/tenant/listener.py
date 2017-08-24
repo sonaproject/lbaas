@@ -77,7 +77,7 @@ class ListenerViewSet(XOSViewSet):
         lb_obj_list = []
         root_obj['listener'] = listener_obj
 
-        listener_obj['id'] = listener.id
+        #listener_obj['id'] = listener.id
         listener_obj['admin_state_up'] = listener.admin_state_up
         listener_obj['connection_limit'] = listener.connection_limit
         listener_obj['description'] = listener.description

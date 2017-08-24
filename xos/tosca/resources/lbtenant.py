@@ -9,7 +9,7 @@ from services.lbaas.models import Loadbalancer, Listener, Pool, Member, Healthmo
 class LbaasLoadbalancer(XOSResource):
     provides = "tosca.nodes.Loadbalancer"
     xos_model = Loadbalancer
-    copyin_props = ("loadbalancer_id", "description", "vip_subnet_id", "vip_address", "vip_network_name", "admin_state_up", "operating_status", "provisioning_status")
+    copyin_props = ("loadbalancer_id", "ptr_listener_id", "ptr_pool_id", "description", "vip_subnet_id", "vip_address", "vip_network_name", "admin_state_up", "operating_status", "provisioning_status")
 
     def get_xos_args(self, throw_exception=True):
         args = super(LbaasLoadbalancer, self).get_xos_args()
@@ -78,7 +78,7 @@ class LbaasListener(XOSResource):
 class LbaasPool(XOSResource):
     provides = "tosca.nodes.Pool"
     xos_model = Pool
-    copyin_props = ("pool_id", "health_monitor_id", "lb_algorithm", "description", "protocol", "admin_state_up", "status")
+    copyin_props = ("pool_id", "health_monitor_id", "ptr_health_monitor_id", "lb_algorithm", "description", "protocol", "admin_state_up", "status")
 
     def get_xos_args(self, throw_exception=True):
         args = super(LbaasPool, self).get_xos_args()
@@ -111,7 +111,7 @@ class LbaasPool(XOSResource):
 class LbaasMember(XOSResource):
     provides = "tosca.nodes.Member"
     xos_model = Member
-    copyin_props = ("member_id", "pool_id", "address", "protocol_port", "weight", "admin_state_up", "operating_status", "provisioning_status")
+    copyin_props = ("member_id", "pool_id", "ptr_pool_id", "address", "protocol_port", "weight", "admin_state_up", "operating_status", "provisioning_status")
 
     def get_xos_args(self, throw_exception=True):
         args = super(LbaasMember, self).get_xos_args()

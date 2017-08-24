@@ -13,8 +13,8 @@ POOL_ID=$3
 
 DATA=$(cat <<EOF
 {
-    "listener_id": null,
-    "pool_id": null
+    "ptr_listener_id": null,
+    "ptr_pool_id": null
 }
 EOF
 )

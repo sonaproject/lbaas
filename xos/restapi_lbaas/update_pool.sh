@@ -12,7 +12,8 @@ HEALTH_ID=$2
 
 DATA=$(cat <<EOF
 {
-    "health_monitor_id": "$HEALTH_ID"
+    "ptr_health_monitor_id": "$HEALTH_ID",
+    "lb_algorithm": "ROUND_ROBIN"
 }
 EOF
 )

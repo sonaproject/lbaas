@@ -66,7 +66,7 @@ class PoolSerializer(PlusModelSerializer):
 
     class Meta:
         model = Pool
-        fields = ('id', 'name', 'health_monitor', 'lb_algorithm', 'protocol', 'description', 'admin_state_up')
+        fields = ('id', 'ptr_health_monitor_id', 'name', 'health_monitor', 'lb_algorithm', 'protocol', 'description', 'admin_state_up')
 
 
 class PoolViewSet(XOSViewSet):
@@ -110,7 +110,7 @@ class PoolViewSet(XOSViewSet):
         health_status_list = []
         root_obj['pool'] = pool_obj
 
-        pool_obj['id'] = pool.id
+        #pool_obj['id'] = pool.id
         pool_obj['status'] = pool.status
         pool_obj['lb_algorithm'] = pool.lb_algorithm
         pool_obj['protocol'] = pool.protocol
@@ -162,6 +162,8 @@ class PoolViewSet(XOSViewSet):
                 pool.name = request.data["name"]
             if 'health_monitor_id' in request.data:
                 pool.health_monitor_id = request.data["health_monitor_id"]
+            if 'ptr_health_monitor_id' in request.data:
+                pool.ptr_health_monitor_id = request.data["ptr_health_monitor_id"]
             if 'lb_algorithm' in request.data and request.data["lb_algorithm"]:
                 pool.lb_algorithm = request.data["lb_algorithm"]
             if 'description' in request.data and request.data["description"]:
@@ -173,6 +175,16 @@ class PoolViewSet(XOSViewSet):
         except KeyError as err:
             logger.error("JSON Key error: %s" % str(err))
             return None
+
+        if pool.ptr_health_monitor_id is None or pool.ptr_health_monitor_id=="":
+            pool.health_monitor_id = None
+        else:
+            try:
+                hm = Healthmonitor.objects.get(health_monitor_id=pool.ptr_health_monitor_id)
+                pool.health_monitor_id = hm.id
+            except KeyError as err:
+                logger.info("health_monitor_id does not exist in Healthmonitor table (health_monitor_id=%s)" % pool.ptr_health_monitor_id)
+                return None
         
         pool.save()
         return pool
@@ -206,9 +218,9 @@ class PoolViewSet(XOSViewSet):
     def create(self, request):
         self.print_message_log("REQ", request)
 
-        if 'health_monitor_id' in request.data and request.data["health_monitor_id"]:
+        if 'ptr_health_monitor_id' in request.data and request.data["ptr_health_monitor_id"]:
             try:
-                health = Healthmonitor.objects.get(id=request.data["health_monitor_id"])
+                health = Healthmonitor.objects.get(health_monitor_id=request.data["ptr_health_monitor_id"])
             except Exception as err:
                 logger.error("%s" % str(err))
                 return Response("Error: health_monitor_id is not present in table lbaas_healthmonitor", status=status.HTTP_406_NOT_ACCEPTABLE)
@@ -290,7 +302,7 @@ class MemberSerializer(PlusModelSerializer):
 
     class Meta:
         model = Member
-        fields = ('id', 'memberpool', 'address', 'protocol_port', 'weight', 'admin_state_up')
+        fields = ('id', 'memberpool', 'ptr_pool_id', 'address', 'protocol_port', 'weight', 'admin_state_up')
 
 class MemberViewSet(XOSViewSet):
     authentication_classes = (CsrfExemptSessionAuthentication, BasicAuthentication)
@@ -339,7 +351,7 @@ class MemberViewSet(XOSViewSet):
     def update_member_info(self, member, request):
         required_flag = True
         if request.method == "POST":
-            if not 'memberpool' in request.data or request.data["memberpool"]=="":
+            if not 'ptr_pool_id' in request.data or request.data["ptr_pool_id"]=="":
                 required_flag = False
             if not 'address' in request.data or request.data["address"]=="":
                 required_flag = False
@@ -353,6 +365,8 @@ class MemberViewSet(XOSViewSet):
         try:
             if 'memberpool' in request.data and request.data["memberpool"]:
                 member.memberpool_id = request.data["memberpool"]
+            if 'ptr_pool_id' in request.data and request.data["ptr_pool_id"]:
+                member.ptr_pool_id = request.data["ptr_pool_id"]
             if 'address' in request.data and request.data["address"]:
                 member.address = request.data["address"]
             if 'protocol_port' in request.data and request.data["protocol_port"]:
@@ -363,6 +377,13 @@ class MemberViewSet(XOSViewSet):
                 member.admin_state_up = request.data["admin_state_up"]
         except KeyError as err:
             logger.error("JSON Key error: %s" % str(err))
+            return None
+
+        try:
+            pool = Pool.objects.get(pool_id=member.ptr_pool_id)
+            member.memberpool_id = pool.id
+        except KeyError as err:
+            logger.info("pool_id does not exist in Pool table (pool_id=%s)" % member.ptr_pool_id)
             return None
 
         member.save()
@@ -400,9 +421,9 @@ class MemberViewSet(XOSViewSet):
 
         # Check whether the pool_id exists in the Pool table
         try:
-            pool = Pool.objects.get(id=request.data["memberpool"])
+            pool = Pool.objects.get(pool_id=request.data["ptr_pool_id"])
         except Exception as err:
-            logger.error("%s (memberpool_id=%s)" % ((str(err), request.data["memberpool"])))
+            logger.error("%s (ptr_pool_id=%s)" % ((str(err), request.data["ptr_pool_id"])))
             return Response("Error: pool_id is not present in table lbaas_pool", status=status.HTTP_406_NOT_ACCEPTABLE)
 
         member = Member()
@@ -425,6 +446,12 @@ class MemberViewSet(XOSViewSet):
     # GET: /api/tenant/pools/{pool_id}/members/{member_id}
     def retrieve(self, request, pool_id=None, pk=None):
         self.print_message_log("REQ", request)
+
+        try:
+            pool = Pool.objects.get(pool_id=pool_id)
+        except Exception as err:
+            logger.error("%s (pool_id=%s)" % ((str(err), pool_id)))
+            return Response("Error: pool_id is not present in table lbaas_pool", status=status.HTTP_406_NOT_ACCEPTABLE)
 
     	try:
     	    member = Member.objects.get(member_id=pk)

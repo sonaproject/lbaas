@@ -135,7 +135,7 @@ class LoadbalancerSerializer(PlusModelSerializer):
 
         class Meta:
             model = Loadbalancer
-            fields = ('id', 'owner', 'name', 'listener', 'pool', 'vip_network_name', 'vip_address', 'description', 'admin_state_up')
+            fields = ('id', 'owner', 'name', 'listener', 'ptr_listener_id', 'pool', 'ptr_pool_id', 'vip_network_name', 'vip_address', 'description', 'admin_state_up')
 
 class LoadbalancerViewSet(XOSViewSet):
     authentication_classes = (CsrfExemptSessionAuthentication, BasicAuthentication)
@@ -195,8 +195,8 @@ class LoadbalancerViewSet(XOSViewSet):
         lb_obj['loadbalancer_id'] = lb_info.loadbalancer_id
         lb_obj['operating_status'] = lb_info.operating_status
         lb_obj['loadbalancer_name'] = lb_info.name
-        lb_obj['listener_id'] = lb_info.listener_id
-        lb_obj['pool_id'] = lb_info.pool_id
+        #lb_obj['listener_id'] = lb_info.listener_id
+        #lb_obj['pool_id'] = lb_info.pool_id
         
         lb_obj['pools'] = pool_list
         pools = Pool.objects.filter(id=lb_info.pool_id)
@@ -240,9 +240,34 @@ class LoadbalancerViewSet(XOSViewSet):
                 lb_info.listener_id= request.data["listener_id"]
             if 'pool_id' in request.data:
                 lb_info.pool_id = request.data["pool_id"]
+            if 'ptr_listener_id' in request.data:
+                lb_info.ptr_listener_id= request.data["ptr_listener_id"]
+            if 'ptr_pool_id' in request.data:
+                lb_info.ptr_pool_id = request.data["ptr_pool_id"]
+
         except KeyError as err:
             logger.error("JSON Key error: %s" % str(err))
             return None
+
+        if lb_info.ptr_listener_id is None or lb_info.ptr_listener_id=="":
+            lb_info.listener_id = None
+        else:
+            try:
+                listener = Listener.objects.get(listener_id=lb_info.ptr_listener_id)
+                lb_info.listener_id = listener.id
+            except KeyError as err:
+                logger.info("listener_id does not exist in Listener table (listener_id=%s)" % lb_info.ptr_listener_id)
+                return None
+
+        if lb_info.ptr_pool_id is None or lb_info.ptr_pool_id=="":
+            lb_info.pool_id = None
+        else:
+            try:
+                pool = Pool.objects.get(pool_id=lb_info.ptr_pool_id)
+                lb_info.pool_id = pool.id
+            except KeyError as err:
+                logger.info("pool_id does not exist in Pool table (pool_id=%s)" % lb_info.ptr_pool_id)
+                return None
 
         lb_info.save()
 
@@ -274,8 +299,12 @@ class LoadbalancerViewSet(XOSViewSet):
         if 'owner' in request.data and request.data["owner"]:
             lb_info.owner_id = request.data["owner"]
         else:
-            service = Service.objects.get(name = "lbaas")
-            lb_info.owner_id = service.id
+            try:
+                service = Service.objects.get(name = "lbaas")
+                lb_info.owner_id = service.id
+            except Exception as err:
+                logger.error("%s" % str(err))
+                return Response("Error: name(lbaas) does not exist in core_service", status=status.HTTP_406_NOT_ACCEPTABLE)
 
         if 'vip_network_name' in request.data and request.data["vip_network_name"]:
             vip_network_name = request.data["vip_network_name"]
@@ -296,6 +325,20 @@ class LoadbalancerViewSet(XOSViewSet):
     	if 'pool_id' in request.data and request.data["pool_id"]:
             try:
                 pool = Pool.objects.get(id=request.data["pool_id"])
+            except Exception as err:
+                logger.error("%s" % str(err))
+                return Response("Error: pool_id does not exist in Pool table", status=status.HTTP_406_NOT_ACCEPTABLE)
+
+    	if 'ptr_listener_id' in request.data and request.data["ptr_listener_id"]:
+            try:
+                listener = Listener.objects.get(listener_id=request.data["ptr_listener_id"])
+            except Exception as err:
+                logger.error("%s" % str(err))
+                return Response("Error: listener_id does not exist in Listener table", status=status.HTTP_406_NOT_ACCEPTABLE)
+
+    	if 'ptr_pool_id' in request.data and request.data["ptr_pool_id"]:
+            try:
+                pool = Pool.objects.get(pool_id=request.data["ptr_pool_id"])
             except Exception as err:
                 logger.error("%s" % str(err))
                 return Response("Error: pool_id does not exist in Pool table", status=status.HTTP_406_NOT_ACCEPTABLE)
