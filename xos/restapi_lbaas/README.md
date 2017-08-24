@@ -26,7 +26,7 @@ docker exec sona_xos_ui_1 python tosca/run.py xosadmin@opencord.org /opt/cord_pr
 
 ```
 
-# 절차 B (이 절차를 따라서 시험하지 마세요. 아직 검증중입니다)
+# 절차 B
 This is like a openstack flow 
 ```
 >> usage
