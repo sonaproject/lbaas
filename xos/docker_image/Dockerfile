@@ -48,7 +48,7 @@ RUN set -x \
 	&& apt-get purge -y --auto-remove $buildDeps
 
 RUN apt-get update \
-    && apt-get install -y vim net-tools hatop ssh openssh-client
+    && apt-get install -y vim net-tools hatop ssh openssh-client curl
 
 COPY haproxy.cfg /usr/local/etc/haproxy/haproxy.cfg
 COPY docker-entrypoint.sh /
