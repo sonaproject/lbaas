@@ -238,6 +238,7 @@ class SyncLoadbalancer(SyncInstanceUsingAnsible):
         except Exception as e:
             logger.log_exc("Listener.objects.get() failed - %s" % e)
 
+        """
         try:
             instance = Instance.objects.get(id=o.instance.id)
             instance.updated = time.time()
@@ -245,7 +246,8 @@ class SyncLoadbalancer(SyncInstanceUsingAnsible):
             instance.save()
         except Exception as e:
             logger.log_exc("Instance.objects.get() failed - %s" % e)
-        
+        """
+
         fields = self.convert_unicode_to_str(fields)
 
         lb_thr = threading.Thread(target=self.update_lb_provisioning_status, args=(o.instance_id, o.loadbalancer_id, ))

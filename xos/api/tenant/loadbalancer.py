@@ -302,6 +302,11 @@ class LoadbalancerViewSet(XOSViewSet):
             try:
                 service = Service.objects.get(name = "lbaas")
                 lb_info.owner_id = service.id
+
+                # Because mount_data_sets information is not available with TOSCA
+                slice = Slice.objects.get(service_id=service.id)
+                slice.mount_data_sets = slice.description
+                slice.save()
             except Exception as err:
                 logger.error("%s" % str(err))
                 return Response("Error: name(lbaas) does not exist in core_service", status=status.HTTP_406_NOT_ACCEPTABLE)

@@ -13,6 +13,6 @@ if [ "$1" = 'haproxy' ]; then
 fi
 
 sleep 15
+/cksum.sh &
 
 exec "$@"
-

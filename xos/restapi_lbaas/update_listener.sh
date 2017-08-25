@@ -11,9 +11,12 @@ LISTENER_ID=$1
 
 DATA=$(cat <<EOF
 {
-    "protocol": "HTTP"
+    "protocol": "HTTP",
+    "protocol_port": 20001,
+    "stat_port": 20002
 }
 EOF
 )
 
 curl -H "Accept: application/json; indent=4" -H "Content-Type: application/json" -u $AUTH -X PUT -d "$DATA" $HOST/api/tenant/listeners/$LISTENER_ID/
+
