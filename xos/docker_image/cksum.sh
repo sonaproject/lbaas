@@ -21,6 +21,7 @@ do
     then
         kill -HUP 1
         echo "`date`   Current CKSUM: $CUR_CKSUM    INIT_CKSUM: $INIT_CKSUM" >> /cksum.log
+        INIT_CKSUM=$CUR_CKSUM
     fi
 
 
