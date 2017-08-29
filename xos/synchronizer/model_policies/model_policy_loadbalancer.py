@@ -1,58 +1,9 @@
-
 from synchronizers.new_base.modelaccessor import *
 from synchronizers.new_base.policy import Policy
 from synchronizers.new_base.exceptions import *
 
-class Scheduler(object):
-    # XOS Scheduler Abstract Base Class
-    # Used to implement schedulers that pick which node to put instances on
-
-    def __init__(self, slice):
-        self.slice = slice
-
-    def pick(self):
-        # this method should return a tuple (node, parent)
-        #    node is the node to instantiate on
-        #    parent is for container_vm instances only, and is the VM that will
-        #      hold the container
-
-        raise Exception("Abstract Base")
-
-
-class LeastLoadedNodeScheduler(Scheduler):
-    # This scheduler always return the node with the fewest number of
-    # instances.
-
-    def __init__(self, slice, label=None):
-        super(LeastLoadedNodeScheduler, self).__init__(slice)
-        self.label = label
-
-    def pick(self):
-        # start with all nodes
-        nodes = Node.objects.all()
-
-        # if a label is set, then filter by label
-        if self.label:
-            nodes = nodes.filter(nodelabels__name=self.label)
-
-        # if slice.default_node is set, then filter by default_node
-        if self.slice.default_node:
-            nodes = nodes.filter(name = self.slice.default_node)
-
-        # convert to list
-        nodes = list(nodes)
-
-        # sort so that we pick the least-loaded node
-        nodes = sorted(nodes, key=lambda node: node.instances.count())
-
-        if not nodes:
-            raise Exception(
-                "LeastLoadedNodeScheduler: No suitable nodes to pick from")
-
-        # TODO: logic to filter nodes by which nodes are up, and which
-        #   nodes the slice can instantiate on.
-        return [nodes[0], None]
-
+from synchronizers.new_base.model_policies.model_policy_tenantwithcontainer import Scheduler
+from synchronizers.new_base.model_policies.model_policy_tenantwithcontainer import LeastLoadedNodeScheduler
 
 class LoadbalancerPolicy(Policy):
     model_name = "Loadbalancer"
