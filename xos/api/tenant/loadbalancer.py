@@ -135,7 +135,7 @@ class LoadbalancerSerializer(PlusModelSerializer):
 
         class Meta:
             model = Loadbalancer
-            fields = ('id', 'owner', 'name', 'listener', 'ptr_listener_id', 'pool', 'ptr_pool_id', 'vip_network_name', 'vip_address', 'description', 'admin_state_up')
+            fields = ('id', 'owner', 'name', 'listener', 'ptr_listener_id', 'pool', 'ptr_pool_id', 'slice_name', 'vip_address', 'description', 'admin_state_up')
 
 class LoadbalancerViewSet(XOSViewSet):
     authentication_classes = (CsrfExemptSessionAuthentication, BasicAuthentication)
@@ -191,12 +191,10 @@ class LoadbalancerViewSet(XOSViewSet):
             listener_list.append(listener_obj)
 
         lb_obj['vip_address'] = lb_info.vip_address
-        lb_obj['vip_network_name'] = lb_info.vip_network_name
+        lb_obj['slice_name'] = lb_info.slice_name
         lb_obj['loadbalancer_id'] = lb_info.loadbalancer_id
         lb_obj['operating_status'] = lb_info.operating_status
         lb_obj['loadbalancer_name'] = lb_info.name
-        #lb_obj['listener_id'] = lb_info.listener_id
-        #lb_obj['pool_id'] = lb_info.pool_id
         
         lb_obj['pools'] = pool_list
         pools = Pool.objects.filter(id=lb_info.pool_id)
@@ -214,7 +212,7 @@ class LoadbalancerViewSet(XOSViewSet):
         if request.method == "POST":
             if not 'name' in request.data or request.data["name"]=="":
                 required_flag = False
-            if not 'vip_network_name' in request.data or request.data["vip_network_name"]=="":
+            if not 'slice_name' in request.data or request.data["slice_name"]=="":
                 required_flag = False
     
         if required_flag == False:
@@ -228,8 +226,8 @@ class LoadbalancerViewSet(XOSViewSet):
                 lb_info.listener_id= request.data["listener"]
             if 'pool' in request.data and request.data["pool"]:
                 lb_info.pool_id= request.data["pool"]
-            if 'vip_network_name' in request.data and request.data["vip_network_name"]:
-                lb_info.vip_network_name = request.data["vip_network_name"]
+            if 'slice_name' in request.data and request.data["slice_name"]:
+                lb_info.slice_name = request.data["slice_name"]
             if 'vip_address' in request.data and request.data["vip_address"]:
                 lb_info.vip_address = request.data["vip_address"]
             if 'description' in request.data and request.data["description"]:
@@ -302,23 +300,26 @@ class LoadbalancerViewSet(XOSViewSet):
             try:
                 service = Service.objects.get(name = "lbaas")
                 lb_info.owner_id = service.id
-
-                # Because mount_data_sets information is not available with TOSCA
-                slice = Slice.objects.get(service_id=service.id)
-                slice.mount_data_sets = slice.description
-                slice.save()
-            except Exception as err:
-                logger.error("%s" % str(err))
+            except Exception as err:        
                 return Response("Error: name(lbaas) does not exist in core_service", status=status.HTTP_406_NOT_ACCEPTABLE)
 
-        if 'vip_network_name' in request.data and request.data["vip_network_name"]:
-            vip_network_name = request.data["vip_network_name"]
+            # FIXME: Read from Config file
+            # Because mount_data_sets information is not available with TOSCA
+            slices = Slice.objects.filter(service_id=service.id)
+            for slice in slices: 
+                if slice.mount_data_sets == "GenBank":
+                    slice.mount_data_sets = "/usr/local/etc/haproxy/"
+                    slice.save()
+
+        if 'slice_name' in request.data and request.data["slice_name"]:
+            tmp_slice_name = request.data["slice_name"]
+            network_name = tmp_slice_name.split('_')
             try:
-            	network = Network.objects.get(name=vip_network_name)
+            	network = Network.objects.get(name=network_name[1])
             	logger.info("network.id=%s" % network.id)
             	lb_info.vip_subnet_id = network.id
     	    except Exception as err:
-                return Response("Error: vip_network_name does not exist in Network table", status=status.HTTP_406_NOT_ACCEPTABLE)
+                return Response("Error: network_name does not exist in Network table", status=status.HTTP_406_NOT_ACCEPTABLE)
 
     	if 'listener_id' in request.data and request.data["listener_id"]:
             try:

@@ -46,7 +46,7 @@ node_types:
             vip_subnet_id:
                 type: string
                 required: false
-            vip_network_name:
+            slice_name:
                 type: string
                 required: false
             vip_address:

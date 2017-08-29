@@ -9,7 +9,7 @@ from services.lbaas.models import Loadbalancer, Listener, Pool, Member, Healthmo
 class LbaasLoadbalancer(XOSResource):
     provides = "tosca.nodes.Loadbalancer"
     xos_model = Loadbalancer
-    copyin_props = ("loadbalancer_id", "ptr_listener_id", "ptr_pool_id", "description", "vip_subnet_id", "vip_address", "vip_network_name", "admin_state_up", "operating_status", "provisioning_status")
+    copyin_props = ("loadbalancer_id", "ptr_listener_id", "ptr_pool_id", "description", "vip_subnet_id", "vip_address", "slice_name", "admin_state_up", "operating_status", "provisioning_status")
 
     def get_xos_args(self, throw_exception=True):
         args = super(LbaasLoadbalancer, self).get_xos_args()

@@ -64,10 +64,9 @@ message Loadbalancer (TenantWithContainer){
     optional string ptr_pool_id = 5 [help_text = "pool id", max_length = 36, null = False, db_index = True, blank = True];
     optional string description = 6 [help_text = "description", default="", max_length = 255, null = True, db_index = False, blank = True];
     optional manytoone vip_subnet->Network:vip_subnet = 7 [help_text = "vip subnet id", db_index = True, null = True, blank = True];
-    required string vip_network_name = 8 [help_text = "vip network name", max_length = 255, null = False, db_index = False, blank = False];
-    optional manytoone svc_port->Port:lbsvcport = 9 [help_text = "lb service port ", null = False, db_index = True, blank = True];
-    optional string vip_address = 10 [default="0.0.0.0", max_length = 39, content_type = "ip", blank = False, help_text = "LB ip address", null = False, db_index = False];
-    required bool admin_state_up = 11 [help_text = "admin status for this loadbalancer", default = True, null = False, db_index = False, blank = False];
-    optional string operating_status = 12 [help_text = "operating status for this loadbalancer", default="ONLINE", max_length = 36, null = True, db_index = False, blank = False];
-    optional string provisioning_status = 13 [help_text = "status for this loadbalancer", default="PENDING_CREATE", choices = "(('ACTIVE', 'ACTIVE'), ('PENDING_CREATE', 'PENDING_CREATE'), ('PENDING_UPDATE', 'PENDING_UPDATE'), ('PENDING_DELETE', 'PENDING_DELETE') , ('ERROR', 'ERROR'))", max_length = 30, null = True, db_index = False, blank = True];
+    required string slice_name = 8 [help_text = "slice name", max_length = 255, null = False, db_index = False, blank = False];
+    optional string vip_address = 9 [default="0.0.0.0", max_length = 39, content_type = "ip", blank = False, help_text = "LB ip address", null = False, db_index = False];
+    required bool admin_state_up = 10 [help_text = "admin status for this loadbalancer", default = True, null = False, db_index = False, blank = False];
+    optional string operating_status = 11 [help_text = "operating status for this loadbalancer", default="ONLINE", max_length = 36, null = True, db_index = False, blank = False];
+    optional string provisioning_status = 12 [help_text = "status for this loadbalancer", default="PENDING_CREATE", choices = "(('ACTIVE', 'ACTIVE'), ('PENDING_CREATE', 'PENDING_CREATE'), ('PENDING_UPDATE', 'PENDING_UPDATE'), ('PENDING_DELETE', 'PENDING_DELETE') , ('ERROR', 'ERROR'))", max_length = 30, null = True, db_index = False, blank = True];
 }
