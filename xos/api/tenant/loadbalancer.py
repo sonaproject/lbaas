@@ -300,7 +300,7 @@ class LoadbalancerViewSet(XOSViewSet):
             try:
                 service = Service.objects.get(name = "lbaas")
                 lb_info.owner_id = service.id
-            except Exception as err:        
+            except Exception as err:
                 return Response("Error: name(lbaas) does not exist in core_service", status=status.HTTP_406_NOT_ACCEPTABLE)
 
             # FIXME: Read from Config file
@@ -319,7 +319,8 @@ class LoadbalancerViewSet(XOSViewSet):
             	logger.info("network.id=%s" % network.id)
             	lb_info.vip_subnet_id = network.id
     	    except Exception as err:
-                return Response("Error: network_name does not exist in Network table", status=status.HTTP_406_NOT_ACCEPTABLE)
+                err_str = "Error: network_name(%s) does not exist in Network table" % network_name[1]
+                return Response(err_str, status=status.HTTP_406_NOT_ACCEPTABLE)
 
     	if 'listener_id' in request.data and request.data["listener_id"]:
             try:
