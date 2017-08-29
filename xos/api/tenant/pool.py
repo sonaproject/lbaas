@@ -20,6 +20,8 @@ from services.lbaas.models import LbService, Loadbalancer, Listener, Pool, Membe
 import json
 import uuid
 import traceback
+import time
+import threading
 
 settings.DEBUG = False
 
@@ -60,6 +62,33 @@ def update_pool_status(pool_id):
     pool.save()
 
     return pool.status
+
+def update_loadbalancer_model(pool_id):
+    lbs = Loadbalancer.objects.filter(ptr_pool_id=pool_id)
+    for lb in lbs:
+
+        for idx in range (1, 30, 1):
+            ins = ServiceInstance.objects.get(id=lb.instance_id)
+            if ins.updated <= ins.enacted:
+                ins.updated = time.time()
+                logger.info("update time(%s) of instance_id(%s)" % (ins.updated, lb.instance_id))
+                ins.save()
+
+                time.sleep(3)
+
+                ins = ServiceInstance.objects.get(id=lb.instance_id)
+                if ins.updated == ins.enacted:
+                    logger.info("-----> ins.updated == ins.enacted")
+                    ins.save()
+
+                ins = ServiceInstance.objects.get(id=lb.instance_id)
+                if ins.updated > ins.enacted:
+                    logger.info("-----> ins.updated > ins.enacted")
+                    break
+
+    if lbs.count() == 0:
+        logger.info("pool_id(%s) does not exist in Loadbalancer table" % pool_id)
+
 
 class PoolSerializer(PlusModelSerializer):
     id = ReadOnlyField()
@@ -110,7 +139,6 @@ class PoolViewSet(XOSViewSet):
         health_status_list = []
         root_obj['pool'] = pool_obj
 
-        #pool_obj['id'] = pool.id
         pool_obj['status'] = pool.status
         pool_obj['lb_algorithm'] = pool.lb_algorithm
         pool_obj['protocol'] = pool.protocol
@@ -189,15 +217,6 @@ class PoolViewSet(XOSViewSet):
         pool.save()
         return pool
 
-    def update_loadbalancer_model(self, pool_id):
-        pool = Pool.objects.get(pool_id=pool_id)
-        lbs = Loadbalancer.objects.filter(pool_id=pool.id)
-        for lb in lbs:
-            lb.save()
-
-        if lbs.count() == 0:
-            logger.info("pool_id does not exist in Loadbalancer table (pool_id=%s)" % pool.id)
-
     # GET: /api/tenant/pools
     def list(self, request):
         self.print_message_log("REQ", request)
@@ -234,7 +253,8 @@ class PoolViewSet(XOSViewSet):
         
         rsp_data, pool_obj = self.get_rsp_body(pool.pool_id)
 
-        self.update_loadbalancer_model(pool.pool_id)
+        lb_thr = threading.Thread(target=update_loadbalancer_model, args=(pool.pool_id,))
+        lb_thr.start()
 
         self.print_message_log("RSP", rsp_data)
         return Response(rsp_data, status=status.HTTP_201_CREATED)
@@ -265,7 +285,8 @@ class PoolViewSet(XOSViewSet):
 
         rsp_data, pool_obj = self.get_rsp_body(pk)
 
-        self.update_loadbalancer_model(pk)
+        lb_thr = threading.Thread(target=update_loadbalancer_model, args=(pk,))
+        lb_thr.start()
 
         self.print_message_log("RSP", rsp_data)
         return Response(rsp_data, status=status.HTTP_202_ACCEPTED)
@@ -290,7 +311,8 @@ class PoolViewSet(XOSViewSet):
     	if members.count() > 0:
             return Response("Error: There is a member that uses pool_id", status=status.HTTP_406_NOT_ACCEPTABLE)
 
-        self.update_loadbalancer_model(pk)
+        lb_thr = threading.Thread(target=update_loadbalancer_model, args=(pk,))
+        lb_thr.start()
         Pool.objects.filter(pool_id=pk).delete()
 
         self.print_message_log("RSP", "")
@@ -389,15 +411,6 @@ class MemberViewSet(XOSViewSet):
         member.save()
         return member
 
-    def update_loadbalancer_model(self, pool_id):
-        pool = Pool.objects.get(pool_id=pool_id)
-        lbs = Loadbalancer.objects.filter(pool=pool.id)
-        for lb in lbs:
-            lb.save()
-        
-        if lbs.count() == 0:
-            logger.info("pool_id does not exist in Loadbalancer table (pool_id=%s)" % pool.id)
-
     # GET: /api/tenant/pools/{pool_id}/members
     def list(self, request, pool_id=None):
         self.print_message_log("REQ", request)
@@ -438,7 +451,8 @@ class MemberViewSet(XOSViewSet):
         rsp_data, member_obj = self.get_rsp_body(member.member_id)
 
         update_pool_status(member.memberpool.pool_id)
-        self.update_loadbalancer_model(member.memberpool.pool_id)
+        lb_thr = threading.Thread(target=update_loadbalancer_model, args=(pool_id,))
+        lb_thr.start()
 
         self.print_message_log("RSP", rsp_data)
         return Response(rsp_data, status=status.HTTP_201_CREATED)
@@ -475,7 +489,8 @@ class MemberViewSet(XOSViewSet):
 
         rsp_data, member_obj = self.get_rsp_body(pk)
  
-        self.update_loadbalancer_model(pool_id)
+        lb_thr = threading.Thread(target=update_loadbalancer_model, args=(pool_id,))
+        lb_thr.start()
 
         self.print_message_log("RSP", rsp_data)
         return Response(rsp_data, status=status.HTTP_202_ACCEPTED)
@@ -497,7 +512,8 @@ class MemberViewSet(XOSViewSet):
             return Response("Error: member_id does not exist in Member table", status=status.HTTP_406_NOT_ACCEPTABLE)
 
         update_pool_status(pool_id)
-        self.update_loadbalancer_model(pool_id)
+        lb_thr = threading.Thread(target=update_loadbalancer_model, args=(pool_id,))
+        lb_thr.start()
 
         Member.objects.filter(member_id=pk).delete()
 

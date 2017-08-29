@@ -20,6 +20,8 @@ from services.lbaas.models import LbService, Loadbalancer, Listener, Pool, Membe
 import json
 import uuid
 import traceback
+import time
+import threading
 
 settings.DEBUG = False
 
@@ -32,6 +34,38 @@ def get_default_lb_service():
 class CsrfExemptSessionAuthentication(SessionAuthentication):
     def enforce_csrf(self, request):
         return  # To not perform the csrf check previously happening
+
+def update_loadbalancer_model(health_monitor_id):
+    health = Healthmonitor.objects.get(health_monitor_id=health_monitor_id)
+    pools = Pool.objects.filter(health_monitor_id=health.id)
+    
+    for pool in pools:
+        lbs = Loadbalancer.objects.filter(pool_id=pool.id)
+        for lb in lbs:
+            for idx in range (1, 30, 1):
+                ins = ServiceInstance.objects.get(id=lb.instance_id)
+                if ins.updated <= ins.enacted:
+                    ins.updated = time.time()
+                    logger.info("update time(%s) of instance_id(%s)" % (ins.updated, lb.instance_id))
+                    ins.save()
+
+                    time.sleep(3)
+
+                    ins = ServiceInstance.objects.get(id=lb.instance_id)
+                    if ins.updated == ins.enacted:
+                        logger.info("-----> ins.updated == ins.enacted")
+                        ins.save()
+
+                    ins = ServiceInstance.objects.get(id=lb.instance_id)
+                    if ins.updated > ins.enacted:
+                        logger.info("-----> ins.updated > ins.enacted")
+                        break
+
+        if lbs.count() == 0:
+            logger.info("pool_id does not exist in Loadbalancer table (pool_id=%s)" % pool.id)
+
+    if pools.count() == 0:
+        logger.info("health_monitor_id does not exist in Pool table (health_monitor_id=%s)" % health.id)
 
 class HealthSerializer(PlusModelSerializer):
     id = ReadOnlyField()
@@ -78,7 +112,6 @@ class HealthViewSet(XOSViewSet):
         pool_obj = {}
         root_obj['health_monitor'] = health_obj
 
-        #health_obj['id'] = health.id
         health_obj['name'] = health.name
         health_obj['admin_state_up'] = health.admin_state_up
         health_obj['delay'] = health.delay
@@ -147,21 +180,6 @@ class HealthViewSet(XOSViewSet):
         health.save()
         return health
 
-    def update_loadbalancer_model(self, health_monitor_id):
-        health = Healthmonitor.objects.get(health_monitor_id=health_monitor_id)
-        pools = Pool.objects.filter(health_monitor_id=health.id)
-        
-        for pool in pools:
-            lbs = Loadbalancer.objects.filter(pool_id=pool.id)
-            for lb in lbs:
-                lb.save()
-
-            if lbs.count() == 0:
-                logger.info("pool_id does not exist in Loadbalancer table (pool_id=%s)" % pool.id)
-
-        if pools.count() == 0:
-            logger.info("health_monitor_id does not exist in Pool table (health_monitor_id=%s)" % health.id)
-
     # GET: /api/tenant/healthmonitors
     def list(self, request):
         self.print_message_log("REQ", request)
@@ -191,7 +209,8 @@ class HealthViewSet(XOSViewSet):
 
         rsp_data, health_obj = self.get_rsp_body(health.health_monitor_id)
 
-        self.update_loadbalancer_model(health.health_monitor_id)
+        lb_thr = threading.Thread(target=update_loadbalancer_model, args=(health.health_monitor_id,))
+        lb_thr.start()
 
         self.print_message_log("RSP", rsp_data)
         return Response(rsp_data, status=status.HTTP_201_CREATED)
@@ -222,7 +241,8 @@ class HealthViewSet(XOSViewSet):
 
         rsp_data, health_obj = self.get_rsp_body(pk)
 
-        self.update_loadbalancer_model(pk)
+        lb_thr = threading.Thread(target=update_loadbalancer_model, args=(pk,))
+        lb_thr.start()
 
         self.print_message_log("RSP", rsp_data)
         return Response(rsp_data, status=status.HTTP_202_ACCEPTED)
@@ -243,7 +263,9 @@ class HealthViewSet(XOSViewSet):
         except Exception as err:
             logger.error("%s" % str(err))
  
-        self.update_loadbalancer_model(pk)
+        lb_thr = threading.Thread(target=update_loadbalancer_model, args=(pk,))
+        lb_thr.start()
+
     	Healthmonitor.objects.filter(health_monitor_id=pk).delete()
        
         self.print_message_log("RSP", "")

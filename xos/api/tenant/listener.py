@@ -20,6 +20,8 @@ from services.lbaas.models import LbService, Loadbalancer, Listener, Pool, Membe
 import json
 import uuid
 import traceback
+import time
+import threading
 
 settings.DEBUG = False
 
@@ -32,6 +34,32 @@ def get_default_lb_service():
     if lb_services:
         return lb_services[0]
     return None
+
+def update_loadbalancer_model(listener_id):
+    lbs = Loadbalancer.objects.filter(ptr_listener_id=listener_id)
+    for lb in lbs:
+
+        for idx in range (1, 30, 1):
+            ins = ServiceInstance.objects.get(id=lb.instance_id)
+            if ins.updated <= ins.enacted:
+                ins.updated = time.time()
+                logger.info("update time(%s) of instance_id(%s)" % (ins.updated, lb.instance_id))
+                ins.save()
+
+                time.sleep(3)
+
+                ins = ServiceInstance.objects.get(id=lb.instance_id)
+                if ins.updated == ins.enacted:
+                    logger.info("-----> ins.updated == ins.enacted")
+                    ins.save()
+
+                ins = ServiceInstance.objects.get(id=lb.instance_id)
+                if ins.updated > ins.enacted:
+                    logger.info("-----> ins.updated > ins.enacted")
+                    break
+
+    if lbs.count() == 0:
+        logger.info("ptr_listener_id(%s) does not exist in Loadbalancer table" % ptr_listener_id)
 
 class ListenerSerializer(PlusModelSerializer):
     id = ReadOnlyField()
@@ -77,7 +105,6 @@ class ListenerViewSet(XOSViewSet):
         lb_obj_list = []
         root_obj['listener'] = listener_obj
 
-        #listener_obj['id'] = listener.id
         listener_obj['admin_state_up'] = listener.admin_state_up
         listener_obj['connection_limit'] = listener.connection_limit
         listener_obj['description'] = listener.description
@@ -135,15 +162,6 @@ class ListenerViewSet(XOSViewSet):
         listener.save()
         return listener
 
-    def update_loadbalancer_model(self, listener_id):
-        listener = Listener.objects.get(listener_id=listener_id)
-        lbs = Loadbalancer.objects.filter(listener_id=listener.id)
-        for lb in lbs:
-            lb.save()
-
-        if lbs.count() == 0:
-            logger.info("listener_id does not exist in Loadbalancer table (listener_id=%s)" % listener.id)
-
     # GET: /api/tenant/listeners
     def list(self, request):
         self.print_message_log("REQ", request)
@@ -173,7 +191,9 @@ class ListenerViewSet(XOSViewSet):
 
         rsp_data, listener_obj = self.get_rsp_body(listener.listener_id)
 
-        self.update_loadbalancer_model(listener.listener_id)
+        #self.update_loadbalancer_model(listener.listener_id)
+        lb_thr = threading.Thread(target=update_loadbalancer_model, args=(listener.listener_id,))
+        lb_thr.start()
 
         self.print_message_log("RSP", rsp_data)
         return Response(rsp_data, status=status.HTTP_201_CREATED)
@@ -204,7 +224,9 @@ class ListenerViewSet(XOSViewSet):
 
         rsp_data, listener_obj = self.get_rsp_body(pk)
 
-        self.update_loadbalancer_model(pk)
+        #self.update_loadbalancer_model(pk)
+        lb_thr = threading.Thread(target=update_loadbalancer_model, args=(pk,))
+        lb_thr.start()
 
         self.print_message_log("RSP", rsp_data)
         return Response(rsp_data, status=status.HTTP_202_ACCEPTED)
@@ -225,7 +247,10 @@ class ListenerViewSet(XOSViewSet):
         except Exception as err:
             logger.error("%s" % str(err))
 
-        self.update_loadbalancer_model(pk)
+        #self.update_loadbalancer_model(pk)
+        lb_thr = threading.Thread(target=update_loadbalancer_model, args=(pk,))
+        lb_thr.start()
+
         Listener.objects.filter(listener_id=pk).delete()
 
         self.print_message_log("RSP", "")
