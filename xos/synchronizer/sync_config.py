@@ -34,10 +34,8 @@ def update_lb_vip_addr(instance_id, vip_address):
     logger.info("[Thread] lb.vip_address = %s" % lb.vip_address)
 
 def check_lb_vip_address():
-    time.sleep(30)
-
     while True:
-        time.sleep(10)
+        time.sleep(5)
 
         lbs_list = []
         ports_list = []
@@ -75,7 +73,35 @@ def check_lb_vip_address():
 
                     update_lb_vip_addr(lb['instance_id'], port['ip'])
 
+def check_instance_status():
+    while True:
+        time.sleep(5)
+
+        instances = Instance.objects.all()
+        logger.info("[Thread] instances.count = %s" % len(instances))
+
+        for ins in instances:
+            provisioning_status=""
+            if ins.backend_status == "1 - OK":
+                provisioning_status="ACTIVE"
+            else:
+                provisioning_status="ERROR"
+
+            try:
+                lb = Loadbalancer.objects.get(tenantwithcontainer_ptr_id=ins.id)
+                lb.provisioning_status = provisioning_status
+                lb.save()
+                logger.info("[Thread] id=%s, instance_name=%s, lb.provisioning_status=%s" 
+                    % (ins.id, ins.instance_name, lb.provisioning_status))
+            except Exception as err:
+                logger.error("%s" % str(err))
+
 
 if __name__ == "__main__":
+    time.sleep(20)
+
     lb_thr = threading.Thread(target=check_lb_vip_address)
     lb_thr.start()
+
+    ins_thr = threading.Thread(target=check_instance_status)
+    ins_thr.start()
