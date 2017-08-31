@@ -277,7 +277,12 @@ class PoolViewSet(XOSViewSet):
     # PUT: /api/tenant/pools/{pool_id}
     def update(self, request, pk=None):
         self.print_message_log("REQ", request)
-        pool = Pool.objects.get(pool_id=pk)
+
+        try:
+            pool = Pool.objects.get(pool_id=pk)
+        except Exception as err:
+            logger.error("%s" % str(err))
+            return Response("Error: pool_id does not exist in Pool table", status=status.HTTP_406_NOT_ACCEPTABLE)
 
         pool = self.update_pool_info(pool, request)
         if pool == None:
@@ -481,7 +486,12 @@ class MemberViewSet(XOSViewSet):
     # PUT: /api/tenant/pools/{pool_id}/members/{member_id}
     def update(self, request, pool_id=None, pk=None):
         self.print_message_log("REQ", request)
-        member = Member.objects.get(member_id=pk)
+
+    	try:
+    	    member = Member.objects.get(member_id=pk)
+    	except Exception as err:
+       	    logger.error("%s" % str(err))
+    	    return Response("Error: member_id does not exist in Member table", status=status.HTTP_406_NOT_ACCEPTABLE)
 
         member = self.update_member_info(member, request)
         if member == None:

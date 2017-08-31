@@ -216,7 +216,12 @@ class ListenerViewSet(XOSViewSet):
     # PUT: /api/tenant/listeners/{listener_id}
     def update(self, request, pk=None):
         self.print_message_log("REQ", request)
-        listener = Listener.objects.get(listener_id=pk)
+
+        try:
+            listener = Listener.objects.get(listener_id=pk)
+        except Exception as err:
+            logger.error("%s" % str(err))
+            return Response("Error: listener_id does not exist in Listener table", status=status.HTTP_406_NOT_ACCEPTABLE)
 
         listener = self.update_listener_info(listener, request)
         if listener == None:

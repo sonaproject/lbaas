@@ -381,7 +381,12 @@ class LoadbalancerViewSet(XOSViewSet):
     # PUT: /api/tenant/loadbalancers/{loadbalancer_id}
     def update(self, request, pk=None):
         self.print_message_log("REQ", request)
-        lb_info = Loadbalancer.objects.get(loadbalancer_id=pk)
+
+        try:
+            lb_info = Loadbalancer.objects.get(loadbalancer_id=pk)
+        except Exception as err:
+            logger.error("%s" % str(err))
+            return Response("Error: loadbalancer_id does not exist in Loadbalancer table", status=status.HTTP_406_NOT_ACCEPTABLE)
 
         lb_info = self.update_loadbalancer_info(lb_info, request)
         if lb_info == None:

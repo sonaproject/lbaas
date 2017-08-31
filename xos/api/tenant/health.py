@@ -233,7 +233,12 @@ class HealthViewSet(XOSViewSet):
     # PUT: /api/tenant/healthmonitors/{health_monitor_id}
     def update(self, request, pk=None):
         self.print_message_log("REQ", request)
-        health = Healthmonitor.objects.get(health_monitor_id=pk)
+
+        try:
+            health = Healthmonitor.objects.get(health_monitor_id=pk)
+        except Exception as err:
+            logger.error("%s" % str(err))
+            return Response("Error: health_monitor_id does not exist in Healthmonitor table", status=status.HTTP_406_NOT_ACCEPTABLE)
 
         health = self.update_health_info(health, request)
         if health == None:
