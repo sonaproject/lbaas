@@ -53,5 +53,6 @@ RUN apt-get update \
 COPY haproxy.cfg /usr/local/etc/haproxy/haproxy.cfg
 COPY docker-entrypoint.sh /
 COPY cksum.sh  /
+COPY haproxy  /etc/init.d/
 ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["haproxy", "-f", "/usr/local/etc/haproxy/haproxy.cfg"]
