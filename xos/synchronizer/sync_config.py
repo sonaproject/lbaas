@@ -94,7 +94,7 @@ def check_instance_status():
                 logger.info("[Thread] id=%s, instance_name=%s, lb.provisioning_status=%s" 
                     % (ins.id, ins.instance_name, lb.provisioning_status))
             except Exception as err:
-                logger.error("%s" % str(err))
+                logger.error("[Thread] Error: id(%s) does not exist in Loadbalancer table (%s)" % (ins.id, str(err)))
 
 
 if __name__ == "__main__":
