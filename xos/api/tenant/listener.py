@@ -15,7 +15,7 @@ logger = Logger(level=logging.INFO)
 
 from rest_framework.authentication import *
 
-from services.lbaas.models import LbService, Loadbalancer, Listener, Pool, Member, Healthmonitor
+from services.lbaas.models import LbService, Loadbalancer, Listener, Pool, Member, Healthmonitor, LBconfig
 
 import json
 import uuid
@@ -36,27 +36,29 @@ def get_default_lb_service():
     return None
 
 def update_loadbalancer_model(listener_id):
+
     lbs = Loadbalancer.objects.filter(ptr_listener_id=listener_id)
     for lb in lbs:
+        try:
+            config = LBconfig.objects.get(instance_id=lb.instance.id)
+            config.ansible_update=True
+            config.save()
+        except Exception as err:
+            logger.error("%s" % str(err))
 
-        for idx in range (1, 30, 1):
-            ins = ServiceInstance.objects.get(id=lb.instance_id)
-            if ins.updated <= ins.enacted:
-                ins.updated = time.time()
-                logger.info("update time(%s) of instance_id(%s)" % (ins.updated, lb.instance_id))
-                ins.save()
-
-                time.sleep(3)
-
+    for lb in lbs:
+        for idx in range (1, 60, 1):
+            config = LBconfig.objects.get(instance_id=lb.instance.id)
+            if config.ansible_update:
                 ins = ServiceInstance.objects.get(id=lb.instance_id)
-                if ins.updated == ins.enacted:
-                    logger.info("-----> ins.updated == ins.enacted")
+                if ins.updated <= ins.enacted:
+                    ins.updated = time.time()
+                    logger.info("[idx=%s] update time(%s) of instance_id(%s)" % (idx, ins.updated, lb.instance_id))
                     ins.save()
+            else:
+                break
 
-                ins = ServiceInstance.objects.get(id=lb.instance_id)
-                if ins.updated > ins.enacted:
-                    logger.info("-----> ins.updated > ins.enacted")
-                    break
+            time.sleep(1)
 
     if lbs.count() == 0:
         logger.info("ptr_listener_id(%s) does not exist in Loadbalancer table" % ptr_listener_id)
@@ -191,7 +193,6 @@ class ListenerViewSet(XOSViewSet):
 
         rsp_data, listener_obj = self.get_rsp_body(listener.listener_id)
 
-        #self.update_loadbalancer_model(listener.listener_id)
         lb_thr = threading.Thread(target=update_loadbalancer_model, args=(listener.listener_id,))
         lb_thr.start()
 
@@ -229,7 +230,6 @@ class ListenerViewSet(XOSViewSet):
 
         rsp_data, listener_obj = self.get_rsp_body(pk)
 
-        #self.update_loadbalancer_model(pk)
         lb_thr = threading.Thread(target=update_loadbalancer_model, args=(pk,))
         lb_thr.start()
 
@@ -252,7 +252,6 @@ class ListenerViewSet(XOSViewSet):
         except Exception as err:
             logger.error("%s" % str(err))
 
-        #self.update_loadbalancer_model(pk)
         lb_thr = threading.Thread(target=update_loadbalancer_model, args=(pk,))
         lb_thr.start()
 

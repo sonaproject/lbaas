@@ -15,7 +15,7 @@ logger = Logger(level=logging.INFO)
 
 from rest_framework.authentication import *
 
-from services.lbaas.models import LbService, Loadbalancer, Listener, Pool, Member, Healthmonitor
+from services.lbaas.models import LbService, Loadbalancer, Listener, Pool, Member, Healthmonitor, LBconfig
 
 import json
 import uuid
@@ -66,25 +66,27 @@ def update_pool_status(pool_id):
 def update_loadbalancer_model(pool_id):
     lbs = Loadbalancer.objects.filter(ptr_pool_id=pool_id)
     for lb in lbs:
+        try:
+            config = LBconfig.objects.get(instance_id=lb.instance.id)
+            config.ansible_update=True
+            config.save()
+        except Exception as err:
+            logger.error("%s" % str(err))
 
-        for idx in range (1, 30, 1):
-            ins = ServiceInstance.objects.get(id=lb.instance_id)
-            if ins.updated <= ins.enacted:
-                ins.updated = time.time()
-                logger.info("update time(%s) of instance_id(%s)" % (ins.updated, lb.instance_id))
-                ins.save()
 
-                time.sleep(3)
-
+    for lb in lbs:
+        for idx in range (1, 60, 1):
+            config = LBconfig.objects.get(instance_id=lb.instance.id)
+            if config.ansible_update:
                 ins = ServiceInstance.objects.get(id=lb.instance_id)
-                if ins.updated == ins.enacted:
-                    logger.info("-----> ins.updated == ins.enacted")
+                if ins.updated <= ins.enacted:
+                    ins.updated = time.time()
+                    logger.info("[idx=%s] update time(%s) of instance_id(%s)" % (idx, ins.updated, lb.instance_id))
                     ins.save()
+            else:
+                break
 
-                ins = ServiceInstance.objects.get(id=lb.instance_id)
-                if ins.updated > ins.enacted:
-                    logger.info("-----> ins.updated > ins.enacted")
-                    break
+            time.sleep(1)
 
     if lbs.count() == 0:
         logger.info("pool_id(%s) does not exist in Loadbalancer table" % pool_id)

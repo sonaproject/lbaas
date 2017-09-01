@@ -34,31 +34,6 @@ class SyncLoadbalancer(SyncInstanceUsingAnsible):
         else:
             return data
 
-    def update_lb_provisioning_status(self, instance_id, lb_id):
-        logger.info("[THREAD] instance_id=%s, lb_id=%s" % (instance_id, lb_id))
-        idx = 0
-
-        time.sleep(10)
-
-        while idx<30:
-            idx += 1
-            inst = Instance.objects.get(id = instance_id)
-            logger.info("[THREAD] [%d] instance_id=%s, inst.backend_status=%s" % (idx, instance_id, inst.backend_status))
-
-            if idx < 30 and inst.backend_status == "1 - OK":
-                lb = Loadbalancer.objects.get(loadbalancer_id=lb_id)
-                lb.provisioning_status = "ACTIVE"
-                lb.save()
-                return
-
-            elif idx == 30:
-                lb = Loadbalancer.objects.get(loadbalancer_id=lb_id)
-                lb.provisioning_status = "ERROR"
-                lb.save()
-                return
-
-            time.sleep(1)
-
     def update_pool_status(self, pool_id):
         pool_status = ""
 
@@ -127,8 +102,30 @@ class SyncLoadbalancer(SyncInstanceUsingAnsible):
     # part of the set of default attributes.
     def get_extra_attributes(self, o):
         logger.info("===============================================================")
-        logger.info("instance_name=%s, instance_id=%d, instance_uuid=%s" \
-        % (o.instance.instance_name, o.instance_id, o.instance.instance_uuid))
+        logger.info("instance_name=%s, instance_id=%d, instance_uuid=%s"
+            % (o.instance.instance_name, o.instance_id, o.instance.instance_uuid))
+
+        try:
+            instance = Instance.objects.get(id=o.instance.id)
+
+            if instance.userData == "":
+                userData = {}
+                userData['create_date'] = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(time.time()))
+                userData['update_date'] = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(time.time()))
+                userData['command'] = "service haproxy status"
+                userData['expected_result'] = "haproxy is running."
+                userData['result'] = "Initialized"
+                instance.userData = json.dumps(userData)
+                instance.save()
+        except Exception as e:
+            logger.log_exc("Instance.objects.get() failed - %s" % str(e))
+
+        try:
+            config = LBconfig.objects.get(instance_id=o.instance_id)
+            config.ansible_update=False
+            config.save()
+        except Exception as e:
+            logger.log_exc("LBconfig.objects.get() failed - %s" % str(e))
 
         lb_status = True
         if self.update_pool_status(o.pool_id) != "ACTIVE":
@@ -170,7 +167,7 @@ class SyncLoadbalancer(SyncInstanceUsingAnsible):
             logger.info(">>>>> Listener")
             logger.info("%s" % json.dumps(listener, indent=4))
         except Exception as e:
-            logger.log_exc("Listener.objects.get() failed - %s" % e)
+            logger.log_exc("Listener.objects.get() failed - %s" % str(e))
             return None
 
         try:
@@ -186,7 +183,7 @@ class SyncLoadbalancer(SyncInstanceUsingAnsible):
             logger.info(">>>>> Pool")
             logger.info("%s" % json.dumps(pool, indent=4))
         except Exception as e:
-            logger.log_exc("Pool.objects.get() failed - %s" % e)
+            logger.log_exc("Pool.objects.get() failed - %s" % str(e))
             return None
 
         try:
@@ -208,7 +205,7 @@ class SyncLoadbalancer(SyncInstanceUsingAnsible):
             logger.info(">>>>> Members")
             logger.info("%s" % json.dumps(root_obj, indent=4))
         except Exception as e:
-            logger.log_exc("Member.objects.get() failed - %s" % e)
+            logger.log_exc("Member.objects.get() failed - %s" % str(e))
 
         try:
             health_monitor = {}
@@ -227,31 +224,14 @@ class SyncLoadbalancer(SyncInstanceUsingAnsible):
             logger.info(">>>>> Healthmonitor")
             logger.info("%s" % json.dumps(health_monitor, indent=4))
         except Exception as e:
-            logger.log_exc("Healthmonitor.objects.get() failed - %s" % e)
+            logger.log_exc("Healthmonitor.objects.get() failed - %s" % str(e))
 
         logger.info("===============================================================")
         logger.info(">>> curl command for haproxy test")
         logger.info("curl %s:%s" % (loadbalancer['vip_address'], listener['protocol_port']))
 
-        try:
-            listener = Listener.objects.get(id=o.listener_id)
-        except Exception as e:
-            logger.log_exc("Listener.objects.get() failed - %s" % e)
-
-        """
-        try:
-            instance = Instance.objects.get(id=o.instance.id)
-            instance.updated = time.time()
-            instance.volumes = "/usr/local/etc/haproxy"
-            instance.save()
-        except Exception as e:
-            logger.log_exc("Instance.objects.get() failed - %s" % e)
-        """
 
         fields = self.convert_unicode_to_str(fields)
-
-        lb_thr = threading.Thread(target=self.update_lb_provisioning_status, args=(o.instance_id, o.loadbalancer_id, ))
-        lb_thr.start()
 
         return fields
 

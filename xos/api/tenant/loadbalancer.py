@@ -15,7 +15,7 @@ logger = Logger(level=logging.INFO)
 
 from rest_framework.authentication import *
 
-from services.lbaas.models import LbService, Loadbalancer, Listener, Pool, Member, Healthmonitor
+from services.lbaas.models import LbService, Loadbalancer, Listener, Pool, Member, Healthmonitor, LBconfig
 
 import json
 import uuid
@@ -360,6 +360,10 @@ class LoadbalancerViewSet(XOSViewSet):
 
         rsp_data, lb_obj = self.get_rsp_body(lb_info.loadbalancer_id)
 
+        lbconfig = LBconfig()
+        lbconfig.instance_id=lb_info.tenantwithcontainer_ptr_id
+        lbconfig.save()
+
         self.print_message_log("RSP", rsp_data)
         return Response(rsp_data, status=status.HTTP_201_CREATED)
 
@@ -414,6 +418,7 @@ class LoadbalancerViewSet(XOSViewSet):
 	
         Loadbalancer.objects.filter(loadbalancer_id=pk).delete()
         Port.objects.filter(instance_id=lb_info.instance_id, ip=lb_info.vip_address).delete()
+        LBconfig.objects.filter(instance_id=lb_info.tenantwithcontainer_ptr_id).delete()
 
         self.print_message_log("RSP", "")
         return Response(status=status.HTTP_204_NO_CONTENT)
