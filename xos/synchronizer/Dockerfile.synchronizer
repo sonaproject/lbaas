@@ -7,6 +7,9 @@ RUN echo "set tabstop=4 softtabstop=4 shiftwidth=4 expandtab autoindent" >> /roo
 RUN echo "set tags=./tags,/opt/xos/tags" >> /root/.vimrc
 RUN echo "set term=xterm" >> /root/.vimrc
 
+RUN cp /opt/xos/synchronizers/lbaas/ctail /usr/bin/
+RUN rm /opt/xos/synchronizers/lbaas/ctail
+
 RUN apt-get update && apt-get install -y vim tree lrzsz
 
 ENTRYPOINT []
