@@ -2,7 +2,9 @@ import importlib
 import os
 import sys
 import time
+import datetime
 import threading
+import json
 from xosconfig import Config
 config_file = os.path.abspath(os.path.dirname(os.path.realpath(__file__)) + '/lbaas_config.yaml')
 Config.init(config_file, 'synchronizer-config-schema.yaml')
@@ -15,28 +17,38 @@ logger = Logger(level=logging.INFO)
 
 
 def update_lb_vip_addr(instance_id, vip_address):
-    lb = Loadbalancer.objects.get(instance_id=instance_id)
-    lb.vip_address = vip_address
-    lb.save()
+    try:
+        lb = Loadbalancer.objects.get(instance_id=instance_id)
+        lb.vip_address = vip_address
+        lb.save()
+    except Exception as err:
+        logger.error("%s" % str(err))
+
+    try:
+        config = LBconfig.objects.get(instance_id=instance_id)
+        config.ansible_update=True
+        config.save()
+    except Exception as err:
+        logger.error("%s" % str(err))
 
     for idx in range(1, 180, 1):
-        time.sleep(1)
-        ins = ServiceInstance.objects.get(id=instance_id)
-        if ins.updated == ins.enacted:
-            logger.info("[Thread] [%d] updated ServiceInstance" % idx)
-            ins.updated = time.time()
-            ins.save()
+        config = LBconfig.objects.get(instance_id=instance_id)
+        if config.ansible_update:
+            ins = ServiceInstance.objects.get(id=instance_id)
+            if ins.updated <= ins.enacted:
+                ins.updated = time.time()
+                logger.info("[idx=%s] update time(%s) of instance_id(%s)" % (idx, ins.updated, lb.instance_id))
+                ins.save()
+            else:
+                break
 
-        ins = ServiceInstance.objects.get(id=instance_id)
-        if ins.updated != ins.enacted:
-            break
+            time.sleep(1)
 
     logger.info("[Thread] lb.vip_address = %s" % lb.vip_address)
 
 def check_lb_vip_address():
     while True:
         time.sleep(5)
-
         lbs_list = []
         ports_list = []
 
@@ -76,16 +88,43 @@ def check_lb_vip_address():
 def check_instance_status():
     while True:
         time.sleep(5)
-
         instances = Instance.objects.all()
         logger.info("[Thread] instances.count = %s" % len(instances))
 
         for ins in instances:
             provisioning_status=""
-            if ins.backend_status == "1 - OK":
-                provisioning_status="ACTIVE"
+            if ins.backend_status == "0 - Provisioning in progress":
+                provisioning_status="PENDING_UPDATE"
+
+            elif ins.backend_status == "1 - OK":
+                if ins.userData == "":
+                    provisioning_status="PENDING_UPDATE"
+                else:
+                    try:
+                        userData = json.loads(ins.userData)
+                        create_timestamp = time.mktime(datetime.datetime.strptime(userData['create_date'], "%Y-%m-%d %H:%M:%S").timetuple())
+                        update_timestamp = time.mktime(datetime.datetime.strptime(userData['update_date'], "%Y-%m-%d %H:%M:%S").timetuple())
+                        
+                        if userData['result'] == "Initialized":
+                            provisioning_status="PENDING_UPDATE"
+                        elif userData['expected_result'] != userData['result'] and (float(update_timestamp)-float(create_timestamp)) > 30:
+                            provisioning_status="ERROR"
+                        else:
+                            provisioning_status="ACTIVE"
+                    except Exception as err:
+                        logger.error("[Thread] Error: json.loads() failed (%s)" % str(err))
             else:
-                provisioning_status="ERROR"
+                try:
+                    userData = json.loads(ins.userData)
+                    create_timestamp = time.mktime(datetime.datetime.strptime(userData['create_date'], "%Y-%m-%d %H:%M:%S").timetuple())
+                    update_timestamp = time.mktime(datetime.datetime.strptime(userData['update_date'], "%Y-%m-%d %H:%M:%S").timetuple())
+                        
+                    if (float(update_timestamp)-float(create_timestamp)) < 30:
+                        provisioning_status="PENDING_UPDATE"
+                    else:
+                        provisioning_status="ERROR"
+                except Exception as err:
+                        logger.error("[Thread] Error: json.loads() failed (%s)" % str(err))               
 
             try:
                 lb = Loadbalancer.objects.get(tenantwithcontainer_ptr_id=ins.id)
@@ -96,9 +135,8 @@ def check_instance_status():
             except Exception as err:
                 logger.error("[Thread] Error: id(%s) does not exist in Loadbalancer table (%s)" % (ins.id, str(err)))
 
-
 if __name__ == "__main__":
-    time.sleep(20)
+    time.sleep(15)
 
     lb_thr = threading.Thread(target=check_lb_vip_address)
     lb_thr.start()
