@@ -136,7 +136,26 @@ def check_instance_status():
                 logger.error("[Thread] Error: id(%s) does not exist in Loadbalancer table (%s)" % (ins.id, str(err)))
 
 if __name__ == "__main__":
-    time.sleep(15)
+    models_active = False
+    wait = False
+
+    while not models_active:
+    try:
+        first_controller = Controller.objects.first()
+        logger.debug("one of controller set: %s" % first_controller.name) 
+        first_image      = Image.objects.first()
+        logger.debug("one of image set     : %s" % first_image.name) 
+        models_active = True 
+    except Exception,e:
+        logger.info(str(e))
+        logger.info('Waiting for data model to come up before starting...')
+        time.sleep(3)
+        wait = True
+
+    logger.debug("Data Model is active (first_controller: %s)" % first_controller)
+
+    if (wait):
+        time.sleep(5) # Safety factor, seeing that we stumbled waiting for the data model to come up.
 
     lb_thr = threading.Thread(target=check_lb_vip_address)
     lb_thr.start()
