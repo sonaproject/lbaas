@@ -140,17 +140,17 @@ if __name__ == "__main__":
     wait = False
 
     while not models_active:
-    try:
-        first_controller = Controller.objects.first()
-        logger.debug("one of controller set: %s" % first_controller.name) 
-        first_image      = Image.objects.first()
-        logger.debug("one of image set     : %s" % first_image.name) 
-        models_active = True 
-    except Exception,e:
-        logger.info(str(e))
-        logger.info('Waiting for data model to come up before starting...')
-        time.sleep(3)
-        wait = True
+        try:
+            first_controller = Controller.objects.first()
+            logger.debug("one of controller set: %s" % first_controller.name) 
+            first_image      = Image.objects.first()
+            logger.debug("one of image set     : %s" % first_image.name) 
+            models_active = True 
+        except Exception,e:
+            logger.info(str(e))
+            logger.info('Waiting for data model to come up before starting...')
+            time.sleep(3)
+            wait = True
 
     logger.debug("Data Model is active (first_controller: %s)" % first_controller)
 
