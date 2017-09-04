@@ -225,7 +225,7 @@ class HealthViewSet(XOSViewSet):
             health = Healthmonitor.objects.get(health_monitor_id=pk)
         except Exception as err:
             logger.error("%s" % str(err))
-            return Response("Error: health_monitor_id does not exist in Healthmonitor table", status=status.HTTP_406_NOT_ACCEPTABLE)
+            return Response("Error: health_monitor_id does not exist in Healthmonitor table", status=status.HTTP_404_NOT_FOUND)
 
         rsp_data, health_obj = self.get_rsp_body(pk)
 
@@ -240,7 +240,7 @@ class HealthViewSet(XOSViewSet):
             health = Healthmonitor.objects.get(health_monitor_id=pk)
         except Exception as err:
             logger.error("%s" % str(err))
-            return Response("Error: health_monitor_id does not exist in Healthmonitor table", status=status.HTTP_406_NOT_ACCEPTABLE)
+            return Response("Error: health_monitor_id does not exist in Healthmonitor table", status=status.HTTP_404_NOT_FOUND)
 
         health = self.update_health_info(health, request)
         if health == None:
@@ -262,11 +262,11 @@ class HealthViewSet(XOSViewSet):
             health = Healthmonitor.objects.get(health_monitor_id=pk)
         except Exception as err:
             logger.error("%s" % str(err))
-            return Response("Error: health_monitor_id does not exist in Healthmonitor table", status=status.HTTP_406_NOT_ACCEPTABLE)
+            return Response("Error: health_monitor_id does not exist in Healthmonitor table", status=status.HTTP_404_NOT_FOUND)
 
     	try:
             pool = Pool.objects.get(health_monitor_id=health.id)
-            return Response("Error: There is a pool that uses healthmontor_id", status=status.HTTP_406_NOT_ACCEPTABLE)
+            return Response("Error: There is a pool that uses healthmontor_id", status=status.HTTP_404_NOT_FOUND)
         except Exception as err:
             logger.error("%s" % str(err))
  

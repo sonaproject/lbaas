@@ -244,7 +244,7 @@ class PoolViewSet(XOSViewSet):
                 health = Healthmonitor.objects.get(health_monitor_id=request.data["ptr_health_monitor_id"])
             except Exception as err:
                 logger.error("%s" % str(err))
-                return Response("Error: health_monitor_id is not present in table lbaas_healthmonitor", status=status.HTTP_406_NOT_ACCEPTABLE)
+                return Response("Error: health_monitor_id is not present in table lbaas_healthmonitor", status=status.HTTP_404_NOT_FOUND)
 
         pool = Pool()
         pool.pool_id = str(uuid.uuid4())
@@ -269,7 +269,7 @@ class PoolViewSet(XOSViewSet):
             pool = Pool.objects.get(pool_id=pk)
         except Exception as err:
             logger.error("%s" % str(err))
-            return Response("Error: pool_id does not exist in Pool table", status=status.HTTP_406_NOT_ACCEPTABLE)
+            return Response("Error: pool_id does not exist in Pool table", status=status.HTTP_404_NOT_FOUND)
 
         rsp_data, pool_obj = self.get_rsp_body(pk)
 
@@ -284,7 +284,7 @@ class PoolViewSet(XOSViewSet):
             pool = Pool.objects.get(pool_id=pk)
         except Exception as err:
             logger.error("%s" % str(err))
-            return Response("Error: pool_id does not exist in Pool table", status=status.HTTP_406_NOT_ACCEPTABLE)
+            return Response("Error: pool_id does not exist in Pool table", status=status.HTTP_404_NOT_FOUND)
 
         pool = self.update_pool_info(pool, request)
         if pool == None:
@@ -306,17 +306,17 @@ class PoolViewSet(XOSViewSet):
             pool = Pool.objects.get(pool_id=pk)
         except Exception as err:
             logger.error("%s" % str(err))
-            return Response("Error: pool_id does not exist in Pool table", status=status.HTTP_406_NOT_ACCEPTABLE)
+            return Response("Error: pool_id does not exist in Pool table", status=status.HTTP_404_NOT_FOUND)
 
         try:
             lb = Loadbalancer.objects.get(pool_id=pool.id)
-            return Response("Error: There is a loadbalancer that uses pool_id", status=status.HTTP_406_NOT_ACCEPTABLE)
+            return Response("Error: There is a loadbalancer that uses pool_id", status=status.HTTP_404_NOT_FOUND)
         except Exception as err:
             logger.error("%s" % str(err))
 
         members = Member.objects.filter(memberpool_id=pool.id)
     	if members.count() > 0:
-            return Response("Error: There is a member that uses pool_id", status=status.HTTP_406_NOT_ACCEPTABLE)
+            return Response("Error: There is a member that uses pool_id", status=status.HTTP_404_NOT_FOUND)
 
         lb_thr = threading.Thread(target=update_loadbalancer_model, args=(pk,))
         lb_thr.start()
@@ -444,7 +444,7 @@ class MemberViewSet(XOSViewSet):
             pool = Pool.objects.get(pool_id=request.data["ptr_pool_id"])
         except Exception as err:
             logger.error("%s (ptr_pool_id=%s)" % ((str(err), request.data["ptr_pool_id"])))
-            return Response("Error: pool_id is not present in table lbaas_pool", status=status.HTTP_406_NOT_ACCEPTABLE)
+            return Response("Error: pool_id is not present in table lbaas_pool", status=status.HTTP_404_NOT_FOUND)
 
         member = Member()
         member.member_id = str(uuid.uuid4())
@@ -472,13 +472,13 @@ class MemberViewSet(XOSViewSet):
             pool = Pool.objects.get(pool_id=pool_id)
         except Exception as err:
             logger.error("%s (pool_id=%s)" % ((str(err), pool_id)))
-            return Response("Error: pool_id is not present in table lbaas_pool", status=status.HTTP_406_NOT_ACCEPTABLE)
+            return Response("Error: pool_id is not present in table lbaas_pool", status=status.HTTP_404_NOT_FOUND)
 
     	try:
     	    member = Member.objects.get(member_id=pk)
     	except Exception as err:
        	    logger.error("%s" % str(err))
-    	    return Response("Error: member_id does not exist in Member table", status=status.HTTP_406_NOT_ACCEPTABLE)
+    	    return Response("Error: member_id does not exist in Member table", status=status.HTTP_404_NOT_FOUND)
 
         rsp_data, member_obj = self.get_rsp_body(pk)
 
@@ -493,7 +493,7 @@ class MemberViewSet(XOSViewSet):
     	    member = Member.objects.get(member_id=pk)
     	except Exception as err:
        	    logger.error("%s" % str(err))
-    	    return Response("Error: member_id does not exist in Member table", status=status.HTTP_406_NOT_ACCEPTABLE)
+    	    return Response("Error: member_id does not exist in Member table", status=status.HTTP_404_NOT_FOUND)
 
         member = self.update_member_info(member, request)
         if member == None:
@@ -515,13 +515,13 @@ class MemberViewSet(XOSViewSet):
             pool = Pool.objects.get(pool_id=pool_id)
         except Exception as err:
             logger.error("%s" % str(err))
-            return Response("Error: pool_id does not exist in Pool table", status=status.HTTP_406_NOT_ACCEPTABLE)
+            return Response("Error: pool_id does not exist in Pool table", status=status.HTTP_404_NOT_FOUND)
 
         try:
             member = Member.objects.get(member_id=pk)
         except Exception as err:
             logger.error("%s" % str(err))
-            return Response("Error: member_id does not exist in Member table", status=status.HTTP_406_NOT_ACCEPTABLE)
+            return Response("Error: member_id does not exist in Member table", status=status.HTTP_404_NOT_FOUND)
 
         update_pool_status(pool_id)
         lb_thr = threading.Thread(target=update_loadbalancer_model, args=(pool_id,))

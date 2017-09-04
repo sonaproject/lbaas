@@ -301,7 +301,7 @@ class LoadbalancerViewSet(XOSViewSet):
                 service = Service.objects.get(name = "lbaas")
                 lb_info.owner_id = service.id
             except Exception as err:
-                return Response("Error: name(lbaas) does not exist in core_service", status=status.HTTP_406_NOT_ACCEPTABLE)
+                return Response("Error: name(lbaas) does not exist in core_service", status=status.HTTP_404_NOT_FOUND)
 
             # FIXME: Read from Config file
             # Because mount_data_sets information is not available with TOSCA
@@ -320,35 +320,35 @@ class LoadbalancerViewSet(XOSViewSet):
             	lb_info.vip_subnet_id = network.id
     	    except Exception as err:
                 err_str = "Error: network_name(%s) does not exist in Network table" % network_name[1]
-                return Response(err_str, status=status.HTTP_406_NOT_ACCEPTABLE)
+                return Response(err_str, status=status.HTTP_404_NOT_FOUND)
 
     	if 'listener_id' in request.data and request.data["listener_id"]:
             try:
                 listener = Listener.objects.get(id=request.data["listener_id"])
             except Exception as err:
                 logger.error("%s" % str(err))
-                return Response("Error: listener_id does not exist in Listener table", status=status.HTTP_406_NOT_ACCEPTABLE)
+                return Response("Error: listener_id does not exist in Listener table", status=status.HTTP_404_NOT_FOUND)
 
     	if 'pool_id' in request.data and request.data["pool_id"]:
             try:
                 pool = Pool.objects.get(id=request.data["pool_id"])
             except Exception as err:
                 logger.error("%s" % str(err))
-                return Response("Error: pool_id does not exist in Pool table", status=status.HTTP_406_NOT_ACCEPTABLE)
+                return Response("Error: pool_id does not exist in Pool table", status=status.HTTP_404_NOT_FOUND)
 
     	if 'ptr_listener_id' in request.data and request.data["ptr_listener_id"]:
             try:
                 listener = Listener.objects.get(listener_id=request.data["ptr_listener_id"])
             except Exception as err:
                 logger.error("%s" % str(err))
-                return Response("Error: listener_id does not exist in Listener table", status=status.HTTP_406_NOT_ACCEPTABLE)
+                return Response("Error: listener_id does not exist in Listener table", status=status.HTTP_404_NOT_FOUND)
 
     	if 'ptr_pool_id' in request.data and request.data["ptr_pool_id"]:
             try:
                 pool = Pool.objects.get(pool_id=request.data["ptr_pool_id"])
             except Exception as err:
                 logger.error("%s" % str(err))
-                return Response("Error: pool_id does not exist in Pool table", status=status.HTTP_406_NOT_ACCEPTABLE)
+                return Response("Error: pool_id does not exist in Pool table", status=status.HTTP_404_NOT_FOUND)
 
         lb_info.loadbalancer_id = str(uuid.uuid4())
         lb_info.operating_status = "ONLINE"
@@ -375,7 +375,7 @@ class LoadbalancerViewSet(XOSViewSet):
             lb_info = Loadbalancer.objects.get(loadbalancer_id=pk)
         except Exception as err:
             logger.error("%s" % str(err))
-            return Response("Error: loadbalancer_id does not exist in Loadbalancer table", status=status.HTTP_406_NOT_ACCEPTABLE)
+            return Response("Error: loadbalancer_id does not exist in Loadbalancer table", status=status.HTTP_404_NOT_FOUND)
 
         rsp_data, lb_obj = self.get_rsp_body(pk)
 
@@ -390,7 +390,7 @@ class LoadbalancerViewSet(XOSViewSet):
             lb_info = Loadbalancer.objects.get(loadbalancer_id=pk)
         except Exception as err:
             logger.error("%s" % str(err))
-            return Response("Error: loadbalancer_id does not exist in Loadbalancer table", status=status.HTTP_406_NOT_ACCEPTABLE)
+            return Response("Error: loadbalancer_id does not exist in Loadbalancer table", status=status.HTTP_404_NOT_FOUND)
 
         lb_info = self.update_loadbalancer_info(lb_info, request)
         if lb_info == None:
@@ -410,7 +410,7 @@ class LoadbalancerViewSet(XOSViewSet):
             logger.info("instance_id=%s, vip_address=%s" % (lb_info.instance_id, lb_info.vip_address))
         except Exception as err:
             logger.error("%s" % str(err))
-            return Response("Error: loadbalancer_id does not exist in Loadbalancer table", status=status.HTTP_406_NOT_ACCEPTABLE)
+            return Response("Error: loadbalancer_id does not exist in Loadbalancer table", status=status.HTTP_404_NOT_FOUND)
 
         ins = Instance.objects.get(id=lb_info.instance_id)
         ins.deleted = True

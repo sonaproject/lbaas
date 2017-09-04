@@ -207,7 +207,7 @@ class ListenerViewSet(XOSViewSet):
             listener = Listener.objects.get(listener_id=pk)
         except Exception as err:
             logger.error("%s" % str(err))
-            return Response("Error: listener_id does not exist in Listener table", status=status.HTTP_406_NOT_ACCEPTABLE)
+            return Response("Error: listener_id does not exist in Listener table", status=status.HTTP_404_NOT_FOUND)
 
         rsp_data, listener_obj = self.get_rsp_body(pk)
 
@@ -222,7 +222,7 @@ class ListenerViewSet(XOSViewSet):
             listener = Listener.objects.get(listener_id=pk)
         except Exception as err:
             logger.error("%s" % str(err))
-            return Response("Error: listener_id does not exist in Listener table", status=status.HTTP_406_NOT_ACCEPTABLE)
+            return Response("Error: listener_id does not exist in Listener table", status=status.HTTP_404_NOT_FOUND)
 
         listener = self.update_listener_info(listener, request)
         if listener == None:
@@ -244,11 +244,11 @@ class ListenerViewSet(XOSViewSet):
             listener = Listener.objects.get(listener_id=pk)
         except Exception as err:
             logger.error("%s" % str(err))
-            return Response("Error: listener_id does not exist in Listener table", status=status.HTTP_406_NOT_ACCEPTABLE)
+            return Response("Error: listener_id does not exist in Listener table", status=status.HTTP_404_NOT_FOUND)
 
         try:
             lb = Loadbalancer.objects.get(listener_id=listener.id)
-            return Response("Error: There is a loadbalancer that uses listener_id", status=status.HTTP_406_NOT_ACCEPTABLE)
+            return Response("Error: There is a loadbalancer that uses listener_id", status=status.HTTP_404_NOT_FOUND)
         except Exception as err:
             logger.error("%s" % str(err))
 
