@@ -4,15 +4,14 @@ import json
 import collections
 import time
 import threading
+import lbaas_log as slog
+
 from datetime import datetime
 from synchronizers.new_base.SyncInstanceUsingAnsible import SyncInstanceUsingAnsible
 from synchronizers.new_base.modelaccessor import *
-from xos.logger import Logger, logging
 
 parentdir = os.path.join(os.path.dirname(__file__), "..")
 sys.path.insert(0, parentdir)
-
-logger = Logger(level=logging.INFO)
 
 class SyncLoadbalancer(SyncInstanceUsingAnsible):
     provides = [Loadbalancer]
@@ -43,17 +42,17 @@ class SyncLoadbalancer(SyncInstanceUsingAnsible):
             try:
                 pool = Pool.objects.get(id=pool_id)
             except Exception as err:
-                logger.error("%s (id=%s)" % ((str(err), pool_id)))
+                slog.error("%s (id=%s)" % ((str(err), pool_id)))
                 pool_status = "ERROR"
 
             healths = Healthmonitor.objects.filter(id=pool.health_monitor_id)
             if len(healths) > 0:
                 pool_status = "ACTIVE"
             else:
-                logger.error("Healthmonitor information does not exist (id=%s)" % pool.health_monitor_id)
+                slog.error("Healthmonitor information does not exist (id=%s)" % pool.health_monitor_id)
                 pool_status = "ERROR"
         else:
-            logger.error("Member information does not exist (memberpool_id=%s)" % pool.id)
+            slog.error("Member information does not exist (memberpool_id=%s)" % pool.id)
             pool_status = "ERROR"
 
         try:
@@ -61,7 +60,7 @@ class SyncLoadbalancer(SyncInstanceUsingAnsible):
             pool.status = pool_status
             pool.save()
         except Exception as err:
-            logger.error("id does not exist in Pool table (id=%s)" % pool_id)
+            slog.error("id does not exist in Pool table (id=%s)" % pool_id)
 
         return pool_status
 
@@ -78,22 +77,22 @@ class SyncLoadbalancer(SyncInstanceUsingAnsible):
                         if len(healths) > 0:
                             lb.provisioning_status = "ACTIVE"
                         else:
-                            logger.error("Healthmonitor information does not exist (id=%s)" % pool.health_monitor_id)
+                            slog.error("Healthmonitor information does not exist (id=%s)" % pool.health_monitor_id)
                             lb.provisioning_status = "ERROR"
                     else:
-                        logger.error("Member information does not exist (memberpool_id=%s)" % pool.id)
+                        slog.error("Member information does not exist (memberpool_id=%s)" % pool.id)
                         lb.provisioning_status = "ERROR"
                 if len(pools) == 0:
-                    logger.error("Pool information does not exist (loadbalancer_id=%s, id=%s)" % (lb_id, lb.pool_id))
+                    slog.error("Pool information does not exist (loadbalancer_id=%s, id=%s)" % (lb_id, lb.pool_id))
                     lb.provisioning_status = "ERROR"
             if len(listeners) == 0:
-                logger.error("Listener information does not exist (id=%s)" % lb.listener_id)
+                slog.error("Listener information does not exist (id=%s)" % lb.listener_id)
                 lb.provisioning_status = "ERROR"
         else:
-            logger.error("Loadbalancer information does not exist (loadbalancer_id=%s)" % lb_id)
+            slog.error("Loadbalancer information does not exist (loadbalancer_id=%s)" % lb_id)
             lb.provisioning_status = "ERROR"
 
-        logger.info("lb.provisioning_status=%s" % lb.provisioning_status)
+        slog.info("lb.provisioning_status=%s" % lb.provisioning_status)
         lb.save()
 
         return lb.provisioning_status
@@ -101,8 +100,8 @@ class SyncLoadbalancer(SyncInstanceUsingAnsible):
     # Gets the attributes that are used by the Ansible template but are not
     # part of the set of default attributes.
     def get_extra_attributes(self, o):
-        logger.info("===============================================================")
-        logger.info("instance_name=%s, instance_id=%d, instance_uuid=%s"
+        slog.info("===============================================================")
+        slog.info("instance_name=%s, instance_id=%d, instance_uuid=%s"
             % (o.instance.instance_name, o.instance_id, o.instance.instance_uuid))
 
         try:
@@ -118,22 +117,22 @@ class SyncLoadbalancer(SyncInstanceUsingAnsible):
                 instance.userData = json.dumps(userData)
                 instance.save()
         except Exception as e:
-            logger.log_exc("Instance.objects.get() failed - %s" % str(e))
+            slog.log_exc("Instance.objects.get() failed - %s" % str(e))
 
         try:
             config = LBconfig.objects.get(instance_id=o.instance_id)
             config.ansible_update=False
             config.save()
         except Exception as e:
-            logger.log_exc("LBconfig.objects.get() failed - %s" % str(e))
+            slog.log_exc("LBconfig.objects.get() failed - %s" % str(e))
 
         lb_status = True
         if self.update_pool_status(o.pool_id) != "ACTIVE":
-            logger.error("Pool status is not ACTIVE (pool_id=%s)" % o.pool_id)
+            slog.error("Pool status is not ACTIVE (pool_id=%s)" % o.pool_id)
             lb_status = False
 
         if self.update_loadbalancer_status(o.loadbalancer_id) != "ACTIVE":
-            logger.error("Loadbalancer status is not ACTIVE (loadbalancer_id=%s)" % o.loadbalancer_id)
+            slog.error("Loadbalancer status is not ACTIVE (loadbalancer_id=%s)" % o.loadbalancer_id)
             lb_status = False
 
         if lb_status == False:
@@ -150,8 +149,8 @@ class SyncLoadbalancer(SyncInstanceUsingAnsible):
         loadbalancer['vip_address'] = o.vip_address
         fields['loadbalancer'] = json.dumps(loadbalancer, indent=4)
        
-        logger.info(">>>>> Loadbalancer")
-        logger.info("%s" % json.dumps(loadbalancer, indent=4))
+        slog.info(">>>>> Loadbalancer")
+        slog.info("%s" % json.dumps(loadbalancer, indent=4))
 
         try:
             listener = {}
@@ -164,10 +163,10 @@ class SyncLoadbalancer(SyncInstanceUsingAnsible):
             listener['connection_limit'] = obj.connection_limit
             fields['listener'] = json.dumps(listener, indent=4)
 
-            logger.info(">>>>> Listener")
-            logger.info("%s" % json.dumps(listener, indent=4))
+            slog.info(">>>>> Listener")
+            slog.info("%s" % json.dumps(listener, indent=4))
         except Exception as e:
-            logger.log_exc("Listener.objects.get() failed - %s" % str(e))
+            slog.log_exc("Listener.objects.get() failed - %s" % str(e))
             return None
 
         try:
@@ -180,10 +179,10 @@ class SyncLoadbalancer(SyncInstanceUsingAnsible):
             pool['protocol'] = obj.protocol
             fields['pool'] = json.dumps(pool, indent=4)
 
-            logger.info(">>>>> Pool")
-            logger.info("%s" % json.dumps(pool, indent=4))
+            slog.info(">>>>> Pool")
+            slog.info("%s" % json.dumps(pool, indent=4))
         except Exception as e:
-            logger.log_exc("Pool.objects.get() failed - %s" % str(e))
+            slog.log_exc("Pool.objects.get() failed - %s" % str(e))
             return None
 
         try:
@@ -202,10 +201,10 @@ class SyncLoadbalancer(SyncInstanceUsingAnsible):
 
             fields['members'] = json.dumps(root_obj, indent=4)
 
-            logger.info(">>>>> Members")
-            logger.info("%s" % json.dumps(root_obj, indent=4))
+            slog.info(">>>>> Members")
+            slog.info("%s" % json.dumps(root_obj, indent=4))
         except Exception as e:
-            logger.log_exc("Member.objects.get() failed - %s" % str(e))
+            slog.log_exc("Member.objects.get() failed - %s" % str(e))
 
         try:
             health_monitor = {}
@@ -221,14 +220,14 @@ class SyncLoadbalancer(SyncInstanceUsingAnsible):
             health_monitor['expected_codes'] = obj.expected_codes
             fields['health_monitor'] = json.dumps(health_monitor, indent=4)
 
-            logger.info(">>>>> Healthmonitor")
-            logger.info("%s" % json.dumps(health_monitor, indent=4))
+            slog.info(">>>>> Healthmonitor")
+            slog.info("%s" % json.dumps(health_monitor, indent=4))
         except Exception as e:
-            logger.log_exc("Healthmonitor.objects.get() failed - %s" % str(e))
+            slog.log_exc("Healthmonitor.objects.get() failed - %s" % str(e))
 
-        logger.info("===============================================================")
-        logger.info(">>> curl command for haproxy test")
-        logger.info("curl %s:%s" % (loadbalancer['vip_address'], listener['protocol_port']))
+        slog.info("===============================================================")
+        slog.info(">>> curl command for haproxy test")
+        slog.info("curl %s:%s" % (loadbalancer['vip_address'], listener['protocol_port']))
 
 
         fields = self.convert_unicode_to_str(fields)
