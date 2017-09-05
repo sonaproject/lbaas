@@ -2,10 +2,12 @@ option name = "lbaas";
 option verbose_name = "Load Balancer as a Service";
 
 message LbService (Service){
+    option verbose_name = "LbService";
     required string service_name = 1 [help_text = "service name", max_length = 254, null = False, db_index = False, blank = False];
 }
 
 message Listener (XOSBase){
+     option verbose_name = "Listener";
      required string name = 1 [help_text = "listener name", max_length = 255, null = False, db_index = False, blank = False];
      optional string listener_id = 2 [help_text = "listener id", max_length = 36, null = False, db_index = False, blank = False];
      required string protocol = 3 [default = "http", choices = "(('HTTP', 'HTTP'), ('HTTPS', 'HTTPS'), ('TCP', 'TCP'))", max_length = 30, blank = False, null = False, db_index = False];
@@ -31,6 +33,7 @@ message Healthmonitor (XOSBase){
 }
 
 message Pool (XOSBase){
+    option verbose_name = "Pool";
     required string name = 1 [help_text = "pool name", max_length = 255, null = False, db_index = False, blank = False];
     optional string pool_id = 2 [help_text = "pool id", max_length = 36, null = False, db_index = False, blank = True];
     optional manytoone health_monitor->Healthmonitor:health_monitor = 3 [help_text = "healthmonitor id", max_length = 36, null = False, db_index = True, blank = True];
@@ -43,6 +46,7 @@ message Pool (XOSBase){
 }
 
 message Member (XOSBase){
+    option verbose_name = "Member";
     required string name = 1 [help_text = "pool name", max_length = 255, null = False, db_index = False, blank = False];
     optional string member_id = 2 [help_text = "member id", max_length = 36, null = False, db_index = False, blank = True];
     optional manytoone memberpool->Pool:memberpool = 3 [help_text = "pool id", null = False, db_index = True, blank = True];
@@ -56,7 +60,7 @@ message Member (XOSBase){
 }
 
 message Loadbalancer (TenantWithContainer){
-    option verbose_name = "Lb Tenant";
+    option verbose_name = "Loadbalancer";
     optional string loadbalancer_id = 1 [help_text = "loadbalancer id", max_length = 36, null = False, db_index = False, blank = False];
     optional manytoone listener->Listener:listener= 2 [help_text = "listener id", null = True, db_index = True, blank = True];
     optional string ptr_listener_id= 3 [help_text = "listener id", max_length = 36, null = True, db_index = True, blank = True];
@@ -72,6 +76,7 @@ message Loadbalancer (TenantWithContainer){
 }
 
 message LBconfig (XOSBase){
+    option verbose_name = "LBconfig";
     required int32 instance_id = 1 [help_text = "instance id", max_length = 255, null = False, db_index = False, blank = False];
     required bool ansible_update= 2 [help_text = "ansible flag to update configuation", default = False, null = False, db_index = False, blank = False];
 }
