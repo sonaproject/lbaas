@@ -182,6 +182,14 @@ class HealthViewSet(XOSViewSet):
         health.save()
         return health
 
+    def check_health_monitor_id(self, health_id):
+        try:
+            health = Healthmonitor.objects.get(health_monitor_id=health_id)
+            return health
+        except Exception as err:
+            logger.error("%s (health_monitor_id=%s)" % ((str(err), health_id)))
+            return None
+
     # GET: /api/tenant/healthmonitors
     def list(self, request):
         self.print_message_log("REQ", request)
@@ -221,10 +229,7 @@ class HealthViewSet(XOSViewSet):
     def retrieve(self, request, pk=None):
         self.print_message_log("REQ", request)
 
-        try:
-            health = Healthmonitor.objects.get(health_monitor_id=pk)
-        except Exception as err:
-            logger.error("%s" % str(err))
+        if self.check_health_monitor_id(pk) is None:
             return Response("Error: health_monitor_id does not exist in Healthmonitor table", status=status.HTTP_404_NOT_FOUND)
 
         rsp_data, health_obj = self.get_rsp_body(pk)
@@ -236,10 +241,8 @@ class HealthViewSet(XOSViewSet):
     def update(self, request, pk=None):
         self.print_message_log("REQ", request)
 
-        try:
-            health = Healthmonitor.objects.get(health_monitor_id=pk)
-        except Exception as err:
-            logger.error("%s" % str(err))
+        health = self.check_health_monitor_id(pk)
+        if health is None:
             return Response("Error: health_monitor_id does not exist in Healthmonitor table", status=status.HTTP_404_NOT_FOUND)
 
         health = self.update_health_info(health, request)
@@ -258,10 +261,8 @@ class HealthViewSet(XOSViewSet):
     def destroy(self, request, pk=None):
         self.print_message_log("REQ", request)
 
-        try:
-            health = Healthmonitor.objects.get(health_monitor_id=pk)
-        except Exception as err:
-            logger.error("%s" % str(err))
+        health = self.check_health_monitor_id(pk)
+        if health is None:
             return Response("Error: health_monitor_id does not exist in Healthmonitor table", status=status.HTTP_404_NOT_FOUND)
 
     	try:

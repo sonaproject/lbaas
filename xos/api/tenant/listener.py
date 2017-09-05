@@ -88,7 +88,7 @@ class ListenerViewSet(XOSViewSet):
     def print_message_log(self, msg_type, http):
         if msg_type == "REQ":
             logger.info("###################################################")
-            logger.info("[Server] <--- ient]")
+            logger.info("[Server] <--- Client]")
             logger.info("METHOD=%s" % http.method)
             logger.info("URI=%s" % http.path)
             logger.info("%s\n" % http.data)
@@ -164,6 +164,14 @@ class ListenerViewSet(XOSViewSet):
         listener.save()
         return listener
 
+    def check_listener_id(self, listener_id):
+        try:
+            listener = Listener.objects.get(listener_id=listener_id)
+            return listener
+        except Exception as err:
+            logger.error("%s (listener_id=%s)" % ((str(err), listener_id)))
+            return None
+
     # GET: /api/tenant/listeners
     def list(self, request):
         self.print_message_log("REQ", request)
@@ -203,10 +211,7 @@ class ListenerViewSet(XOSViewSet):
     def retrieve(self, request, pk=None):
         self.print_message_log("REQ", request)
 
-        try:
-            listener = Listener.objects.get(listener_id=pk)
-        except Exception as err:
-            logger.error("%s" % str(err))
+        if self.check_listener_id(pk) is None:
             return Response("Error: listener_id does not exist in Listener table", status=status.HTTP_404_NOT_FOUND)
 
         rsp_data, listener_obj = self.get_rsp_body(pk)
@@ -218,10 +223,8 @@ class ListenerViewSet(XOSViewSet):
     def update(self, request, pk=None):
         self.print_message_log("REQ", request)
 
-        try:
-            listener = Listener.objects.get(listener_id=pk)
-        except Exception as err:
-            logger.error("%s" % str(err))
+        listener = self.check_listener_id(pk)
+        if listener is None:
             return Response("Error: listener_id does not exist in Listener table", status=status.HTTP_404_NOT_FOUND)
 
         listener = self.update_listener_info(listener, request)
@@ -240,10 +243,8 @@ class ListenerViewSet(XOSViewSet):
     def destroy(self, request, pk=None):
         self.print_message_log("REQ", request)
 
-        try:
-            listener = Listener.objects.get(listener_id=pk)
-        except Exception as err:
-            logger.error("%s" % str(err))
+        listener = self.check_listener_id(pk)
+        if listener is None:
             return Response("Error: listener_id does not exist in Listener table", status=status.HTTP_404_NOT_FOUND)
 
         try:

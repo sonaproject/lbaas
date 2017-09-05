@@ -106,9 +106,10 @@ def check_loadbalancer_model_all_info():
             return "Error"
 
         try:
-            health = Healthmonitor.objects.get(health_monitor_id=pool.health_monitor_id)
+            health = Healthmonitor.objects.get(id=pool.health_monitor_id)
         except Exception as err:
             logger.error("Health information does not exist (health_monitor_id=%s)" % pool.health_monitor_id)
+            return "Error"
 
     logger.info("[Member] check start")
     members = Member.objects.all()
@@ -271,6 +272,14 @@ class LoadbalancerViewSet(XOSViewSet):
 
         return lb_info
 
+    def check_lb_id(self, lb_id):
+        try:
+            lb = Loadbalancer.objects.get(loadbalancer_id=lb_id)
+            return lb
+        except Exception as err:
+            logger.error("%s (lb_id=%s)" % ((str(err), lb_id)))
+            return None
+
     # GET: /api/tenant/loadbalancers 
     def list(self, request):
         self.print_message_log("REQ", request)
@@ -371,10 +380,7 @@ class LoadbalancerViewSet(XOSViewSet):
     def retrieve(self, request, pk=None):
         self.print_message_log("REQ", request)
 
-        try:
-            lb_info = Loadbalancer.objects.get(loadbalancer_id=pk)
-        except Exception as err:
-            logger.error("%s" % str(err))
+        if self.check_lb_id(pk) is None:
             return Response("Error: loadbalancer_id does not exist in Loadbalancer table", status=status.HTTP_404_NOT_FOUND)
 
         rsp_data, lb_obj = self.get_rsp_body(pk)
@@ -386,10 +392,8 @@ class LoadbalancerViewSet(XOSViewSet):
     def update(self, request, pk=None):
         self.print_message_log("REQ", request)
 
-        try:
-            lb_info = Loadbalancer.objects.get(loadbalancer_id=pk)
-        except Exception as err:
-            logger.error("%s" % str(err))
+        lb_info = self.check_lb_id(pk)
+        if lb_info is None:
             return Response("Error: loadbalancer_id does not exist in Loadbalancer table", status=status.HTTP_404_NOT_FOUND)
 
         lb_info = self.update_loadbalancer_info(lb_info, request)
@@ -404,12 +408,9 @@ class LoadbalancerViewSet(XOSViewSet):
     # DELETE: /api/tenant/loadbalancers/{loadbalancer_id}
     def destroy(self, request, pk=None):
         self.print_message_log("REQ", request)
-        
-        try:
-            lb_info = Loadbalancer.objects.get(loadbalancer_id=pk)
-            logger.info("instance_id=%s, vip_address=%s" % (lb_info.instance_id, lb_info.vip_address))
-        except Exception as err:
-            logger.error("%s" % str(err))
+
+        lb_info = self.check_lb_id(pk)
+        if lb_info is None:
             return Response("Error: loadbalancer_id does not exist in Loadbalancer table", status=status.HTTP_404_NOT_FOUND)
 
         ins = Instance.objects.get(id=lb_info.instance_id)
@@ -426,6 +427,9 @@ class LoadbalancerViewSet(XOSViewSet):
     # GET: /api/tenant/loadbalancers/{loadbalancer_id}/statuses
     def get_loadbalancer_statuses(self, request, pk=None):
         self.print_message_log("REQ", request)
+
+        if self.check_lb_id(pk) is None:
+            return Response("Error: loadbalancer_id does not exist in Loadbalancer table", status=status.HTTP_404_NOT_FOUND)
 
         root_obj = {}
         status_obj = {}

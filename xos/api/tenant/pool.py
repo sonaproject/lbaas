@@ -219,6 +219,14 @@ class PoolViewSet(XOSViewSet):
         pool.save()
         return pool
 
+    def check_pool_id(self, pool_id):
+        try:
+            pool = Pool.objects.get(pool_id=pool_id)
+            return pool
+        except Exception as err:
+            logger.error("%s (pool_id=%s)" % ((str(err), pool_id)))
+            return None
+
     # GET: /api/tenant/pools
     def list(self, request):
         self.print_message_log("REQ", request)
@@ -265,11 +273,8 @@ class PoolViewSet(XOSViewSet):
     def retrieve(self, request, pk=None):
         self.print_message_log("REQ", request)
 
-        try:
-            pool = Pool.objects.get(pool_id=pk)
-        except Exception as err:
-            logger.error("%s" % str(err))
-            return Response("Error: pool_id does not exist in Pool table", status=status.HTTP_404_NOT_FOUND)
+        if self.check_pool_id(pk) is None:
+            return Response("Error: pool_id does not exist in Pooltable", status=status.HTTP_404_NOT_FOUND)
 
         rsp_data, pool_obj = self.get_rsp_body(pk)
 
@@ -280,10 +285,8 @@ class PoolViewSet(XOSViewSet):
     def update(self, request, pk=None):
         self.print_message_log("REQ", request)
 
-        try:
-            pool = Pool.objects.get(pool_id=pk)
-        except Exception as err:
-            logger.error("%s" % str(err))
+        pool = self.check_pool_id(pk)
+        if pool is None:
             return Response("Error: pool_id does not exist in Pool table", status=status.HTTP_404_NOT_FOUND)
 
         pool = self.update_pool_info(pool, request)
@@ -302,10 +305,8 @@ class PoolViewSet(XOSViewSet):
     def destroy(self, request, pk=None):
         self.print_message_log("REQ", request)
 
-        try:
-            pool = Pool.objects.get(pool_id=pk)
-        except Exception as err:
-            logger.error("%s" % str(err))
+        pool = self.check_pool_id(pk)
+        if pool is None:
             return Response("Error: pool_id does not exist in Pool table", status=status.HTTP_404_NOT_FOUND)
 
         try:
@@ -418,6 +419,22 @@ class MemberViewSet(XOSViewSet):
         member.save()
         return member
 
+    def check_pool_id(self, pool_id):
+        try:
+            pool = Pool.objects.get(pool_id=pool_id)
+            return pool
+        except Exception as err:
+            logger.error("%s (pool_id=%s)" % ((str(err), pool_id)))
+            return None
+
+    def check_member_id(self, member_id):
+        try:
+            member = Member.objects.get(member_id=member_id)
+            return member
+        except Exception as err:
+            logger.error("%s (member_id=%s)" % ((str(err), member_id)))
+            return None
+
     # GET: /api/tenant/pools/{pool_id}/members
     def list(self, request, pool_id=None):
         self.print_message_log("REQ", request)
@@ -468,17 +485,11 @@ class MemberViewSet(XOSViewSet):
     def retrieve(self, request, pool_id=None, pk=None):
         self.print_message_log("REQ", request)
 
-        try:
-            pool = Pool.objects.get(pool_id=pool_id)
-        except Exception as err:
-            logger.error("%s (pool_id=%s)" % ((str(err), pool_id)))
-            return Response("Error: pool_id is not present in table lbaas_pool", status=status.HTTP_404_NOT_FOUND)
+        if self.check_pool_id(pool_id) is None:
+            return Response("Error: pool_id does not exist in Pool table", status=status.HTTP_404_NOT_FOUND)
 
-    	try:
-    	    member = Member.objects.get(member_id=pk)
-    	except Exception as err:
-       	    logger.error("%s" % str(err))
-    	    return Response("Error: member_id does not exist in Member table", status=status.HTTP_404_NOT_FOUND)
+        if self.check_member_id(pk) is None:
+            return Response("Error: member_id does not exist in Member table", status=status.HTTP_404_NOT_FOUND)
 
         rsp_data, member_obj = self.get_rsp_body(pk)
 
@@ -489,11 +500,13 @@ class MemberViewSet(XOSViewSet):
     def update(self, request, pool_id=None, pk=None):
         self.print_message_log("REQ", request)
 
-    	try:
-    	    member = Member.objects.get(member_id=pk)
-    	except Exception as err:
-       	    logger.error("%s" % str(err))
-    	    return Response("Error: member_id does not exist in Member table", status=status.HTTP_404_NOT_FOUND)
+        pool = self.check_pool_id(pool_id)
+        if pool is None:
+            return Response("Error: pool_id does not exist in Pool table", status=status.HTTP_404_NOT_FOUND)
+
+        member = self.check_member_id(pk)
+        if member is None:
+            return Response("Error: member_id does not exist in Member table", status=status.HTTP_404_NOT_FOUND)
 
         member = self.update_member_info(member, request)
         if member == None:
@@ -511,16 +524,10 @@ class MemberViewSet(XOSViewSet):
     def destroy(self, request, pool_id=None, pk=None):
         self.print_message_log("REQ", request)
 
-        try:
-            pool = Pool.objects.get(pool_id=pool_id)
-        except Exception as err:
-            logger.error("%s" % str(err))
+        if self.check_pool_id(pool_id) is None:
             return Response("Error: pool_id does not exist in Pool table", status=status.HTTP_404_NOT_FOUND)
 
-        try:
-            member = Member.objects.get(member_id=pk)
-        except Exception as err:
-            logger.error("%s" % str(err))
+        if self.check_member_id(pk) is None:
             return Response("Error: member_id does not exist in Member table", status=status.HTTP_404_NOT_FOUND)
 
         update_pool_status(pool_id)
