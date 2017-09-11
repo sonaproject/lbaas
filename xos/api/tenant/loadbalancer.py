@@ -419,7 +419,8 @@ class LoadbalancerViewSet(XOSViewSet):
 	
         Loadbalancer.objects.filter(loadbalancer_id=pk).delete()
         Port.objects.filter(instance_id=lb_info.instance_id, ip=lb_info.vip_address).delete()
-        LBconfig.objects.filter(instance_id=lb_info.tenantwithcontainer_ptr_id).delete()
+        LBconfig.objects.filter(instance_id=lb_info.instance_id).delete()
+        Tag.objects.filter(object_id=lb_info.instance_id).delete()
 
         self.print_message_log("RSP", "")
         return Response(status=status.HTTP_204_NO_CONTENT)

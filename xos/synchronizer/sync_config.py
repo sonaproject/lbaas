@@ -90,16 +90,24 @@ def check_instance_status():
         slog.info("[Thread] instances.count = %s" % len(instances))
 
         for ins in instances:
+            tag=""
             provisioning_status=""
+
+            try:
+                tag = Tag.objects.get(object_id=ins.id, name="chk_container_status")
+            except Exception as err:
+                slog.error("[Thread] Error: object_id(%s) does not exist in Tag table (%s)" % (ins.id, str(err)))
+                continue
+
             if ins.backend_status == "0 - Provisioning in progress":
                 provisioning_status="PENDING_UPDATE"
 
             elif ins.backend_status == "1 - OK":
-                if ins.userData == "":
+                if tag.value == "":
                     provisioning_status="PENDING_UPDATE"
                 else:
                     try:
-                        userData = json.loads(ins.userData)
+                        userData = json.loads(tag.value)
                         create_timestamp = time.mktime(datetime.datetime.strptime(userData['create_date'], "%Y-%m-%d %H:%M:%S").timetuple())
                         update_timestamp = time.mktime(datetime.datetime.strptime(userData['update_date'], "%Y-%m-%d %H:%M:%S").timetuple())
                         
@@ -113,7 +121,7 @@ def check_instance_status():
                         slog.error("[Thread] Error: json.loads() failed (%s)" % str(err))
             else:
                 try:
-                    userData = json.loads(ins.userData)
+                    userData = json.loads(tag.value)
                     create_timestamp = time.mktime(datetime.datetime.strptime(userData['create_date'], "%Y-%m-%d %H:%M:%S").timetuple())
                     update_timestamp = time.mktime(datetime.datetime.strptime(userData['update_date'], "%Y-%m-%d %H:%M:%S").timetuple())
                         
@@ -132,6 +140,8 @@ def check_instance_status():
                     % (ins.id, ins.instance_name, lb.provisioning_status))
             except Exception as err:
                 slog.error("[Thread] Error: id(%s) does not exist in Loadbalancer table (%s)" % (ins.id, str(err)))
+
+
 
 if __name__ == "__main__":
     models_active = False

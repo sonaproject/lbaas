@@ -105,26 +105,32 @@ class SyncLoadbalancer(SyncInstanceUsingAnsible):
             % (o.instance.instance_name, o.instance_id, o.instance.instance_uuid))
 
         try:
-            instance = Instance.objects.get(id=o.instance.id)
+            tags = Tag.objects.filter(object_id=o.instance.id)
 
-            if instance.userData == "":
-                userData = {}
-                userData['create_date'] = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(time.time()))
-                userData['update_date'] = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(time.time()))
-                userData['command'] = "service haproxy status"
-                userData['expected_result'] = "haproxy is running."
-                userData['result'] = "Initialized"
-                instance.userData = json.dumps(userData)
-                instance.save()
+            if not len(tags):
+                userdata = {}
+                userdata['create_date'] = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(time.time()))
+                userdata['update_date'] = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(time.time()))
+                userdata['command'] = "service haproxy status"
+                userdata['expected_result'] = "haproxy is running."
+                userdata['result'] = "Initialized"
+
+                tag = Tag(service = o.instance.slice.service,
+                            content_type = o.instance.self_content_type_id,
+                            object_id = o.instance.id,
+                            name = "chk_container_status",
+                            value = json.dumps(userdata))
+
+                tag.save()
         except Exception as e:
-            slog.log_exc("Instance.objects.get() failed - %s" % str(e))
+            slog.error("Instance.objects.get() failed - %s" % str(e))
 
         try:
             config = LBconfig.objects.get(instance_id=o.instance_id)
             config.ansible_update=False
             config.save()
         except Exception as e:
-            slog.log_exc("LBconfig.objects.get() failed - %s" % str(e))
+            slog.error("LBconfig.objects.get() failed - %s" % str(e))
 
         lb_status = True
         if self.update_pool_status(o.pool_id) != "ACTIVE":
@@ -166,7 +172,7 @@ class SyncLoadbalancer(SyncInstanceUsingAnsible):
             slog.info(">>>>> Listener")
             slog.info("%s" % json.dumps(listener, indent=4))
         except Exception as e:
-            slog.log_exc("Listener.objects.get() failed - %s" % str(e))
+            slog.error("Listener.objects.get() failed - %s" % str(e))
             return None
 
         try:
@@ -182,7 +188,7 @@ class SyncLoadbalancer(SyncInstanceUsingAnsible):
             slog.info(">>>>> Pool")
             slog.info("%s" % json.dumps(pool, indent=4))
         except Exception as e:
-            slog.log_exc("Pool.objects.get() failed - %s" % str(e))
+            slog.error("Pool.objects.get() failed - %s" % str(e))
             return None
 
         try:
@@ -204,7 +210,7 @@ class SyncLoadbalancer(SyncInstanceUsingAnsible):
             slog.info(">>>>> Members")
             slog.info("%s" % json.dumps(root_obj, indent=4))
         except Exception as e:
-            slog.log_exc("Member.objects.get() failed - %s" % str(e))
+            slog.error("Member.objects.get() failed - %s" % str(e))
 
         try:
             health_monitor = {}
@@ -223,7 +229,7 @@ class SyncLoadbalancer(SyncInstanceUsingAnsible):
             slog.info(">>>>> Healthmonitor")
             slog.info("%s" % json.dumps(health_monitor, indent=4))
         except Exception as e:
-            slog.log_exc("Healthmonitor.objects.get() failed - %s" % str(e))
+            slog.error("Healthmonitor.objects.get() failed - %s" % str(e))
 
         slog.info("===============================================================")
         slog.info(">>> curl command for haproxy test")
