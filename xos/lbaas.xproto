@@ -37,7 +37,7 @@ message Pool (XOSBase){
     required string name = 1 [help_text = "pool name", max_length = 255, null = False, db_index = False, blank = False];
     optional string pool_id = 2 [help_text = "pool id", max_length = 36, null = False, db_index = False, blank = True];
     optional manytoone health_monitor->Healthmonitor:health_monitor = 3 [help_text = "healthmonitor id", max_length = 36, null = False, db_index = True, blank = True];
-    optional string ptr_health_monitor_id = 4 [help_text = "healthmonitor id", max_length = 36, null = False, db_index = True, blank = True];
+    optional string ptr_health_monitor_id = 4 [help_text = "healthmonitor id", max_length = 36, null = False, db_index = False, blank = True];
     required string lb_algorithm = 5 [default = "ROUND_ROBIN", choices = "(('ROUND_ROBIN', 'ROUND_ROBIN'), ('LEAST_CONNECTIONS', 'LEAST_CONNECTIONS'), ('SOURCE_IP', 'SOURCE_IP'))", max_length = 30, blank = False, null = False, db_index = False];
     optional string description = 6 [help_text = "description", max_length = 255, null = False, db_index = False, blank = False];
     optional string protocol = 7 [default = "http", choices = "(('HTTP', 'HTTP'), ('HTTPS', 'HTTPS'), ('TCP', 'TCP'))", max_length = 30, blank = False, null = False, db_index = False];
@@ -50,7 +50,7 @@ message Member (XOSBase){
     required string name = 1 [help_text = "pool name", max_length = 255, null = False, db_index = False, blank = False];
     optional string member_id = 2 [help_text = "member id", max_length = 36, null = False, db_index = False, blank = True];
     optional manytoone memberpool->Pool:memberpool = 3 [help_text = "pool id", null = False, db_index = True, blank = True];
-    required string ptr_pool_id = 4 [help_text = "pool id", max_length = 36, null = False, db_index = True, blank = True];
+    required string ptr_pool_id = 4 [help_text = "pool id", max_length = 36, null = False, db_index = False, blank = True];
     required string address = 5 [help_text = "ip address of the member", max_length = 255, null = False, db_index = False, blank = False];
     required int32 protocol_port = 6 [help_text = "listening port of the member", null = False, db_index = False, blank = False];
     optional int32 weight = 7 [help_text = "member weight", default=1, null = False, db_index = False, blank = False];
@@ -63,9 +63,9 @@ message Loadbalancer (TenantWithContainer){
     option verbose_name = "Loadbalancer";
     optional string loadbalancer_id = 1 [help_text = "loadbalancer id", max_length = 36, null = False, db_index = False, blank = False];
     optional manytoone listener->Listener:listener= 2 [help_text = "listener id", null = True, db_index = True, blank = True];
-    optional string ptr_listener_id= 3 [help_text = "listener id", max_length = 36, null = True, db_index = True, blank = True];
+    optional string ptr_listener_id= 3 [help_text = "listener id", max_length = 36, null = True, db_index = False, blank = True];
     optional manytoone pool->Pool:pool = 4 [help_text = "pool id", null = False, db_index = True, blank = True];
-    optional string ptr_pool_id = 5 [help_text = "pool id", max_length = 36, null = False, db_index = True, blank = True];
+    optional string ptr_pool_id = 5 [help_text = "pool id", max_length = 36, null = False, db_index = False, blank = True];
     optional string description = 6 [help_text = "description", default="", max_length = 255, null = True, db_index = False, blank = True];
     optional manytoone vip_subnet->Network:vip_subnet = 7 [help_text = "vip subnet id", db_index = True, null = True, blank = True];
     required string slice_name = 8 [help_text = "slice name", max_length = 255, null = False, db_index = False, blank = False];
@@ -77,6 +77,6 @@ message Loadbalancer (TenantWithContainer){
 
 message LBconfig (XOSBase){
     option verbose_name = "LBconfig";
-    required int32 instance_id = 1 [help_text = "instance id", max_length = 255, null = False, db_index = False, blank = False];
+    required int32 instance_id = 1 [help_text = "instance id", null = False, db_index = False, blank = False];
     required bool ansible_update= 2 [help_text = "ansible flag to update configuation", default = False, null = False, db_index = False, blank = False];
 }
