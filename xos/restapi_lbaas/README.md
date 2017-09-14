@@ -1,12 +1,12 @@
 You can follow below commands:
 
-# 사전작업
-아래 명령을 수행하여 XOS Core의 service 정보를 생성한다. 
+# Pre-procedure
+Execute the following command to generate service information of XOS Core.
 ```
-docker exec sona_xos_ui_1 python tosca/run.py xosadmin@opencord.org /opt/cord_profile/swarm-node.yaml; pushd /root/cord/build/platform-install; ansible-playbook -i inventory/sona onboard-lbaas-playbook.yml; popd
+docker exec sona_xos_ui_1 python tosca/run.py xosadmin@opencord.org /opt/cord_profile/swarm-node.yaml; pushd /opt/cord/build/platform-install; ansible-playbook -i inventory/sona onboard-lbaas-playbook.yml; popd
 ```
 
-# 절차 A 
+# Procedure A
 ```
 >> usage
 ./add_listener.sh
@@ -23,10 +23,9 @@ docker exec sona_xos_ui_1 python tosca/run.py xosadmin@opencord.org /opt/cord_pr
 ./add_member.sh 66d79361-0fba-488e-bfc8-3c2596723872 10.10.2.241 9001
 ./add_member.sh 66d79361-0fba-488e-bfc8-3c2596723872 10.10.2.242 9001
 ./add_loadbalancer.sh 7089f0d9-f59a-41cf-9415-23c5287426fb 66d79361-0fba-488e-bfc8-3c2596723872
-
 ```
 
-# 절차 B
+# Procedure B
 This is like a openstack flow 
 ```
 >> usage
