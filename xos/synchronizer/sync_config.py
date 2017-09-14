@@ -11,8 +11,8 @@ config_file = os.path.abspath(os.path.dirname(os.path.realpath(__file__)) + '/lb
 Config.init(config_file, 'synchronizer-config-schema.yaml')
 
 sys.path.insert(0, "/opt/xos")
-import lbaas_log as slog
 from synchronizers.new_base.modelaccessor import *
+import lbaas_log as slog
 
 def update_lb_vip_addr(instance_id, vip_address):
     try:
@@ -99,10 +99,10 @@ def check_instance_status():
                 slog.error("[Thread] Error: object_id(%s) does not exist in Tag table (%s)" % (ins.id, str(err)))
                 continue
 
-            if ins.backend_status == "0 - Provisioning in progress":
+            if ins.backend_code == 0:
                 provisioning_status="PENDING_UPDATE"
 
-            elif ins.backend_status == "1 - OK":
+            elif ins.backend_code == 1:
                 if tag.value == "":
                     provisioning_status="PENDING_UPDATE"
                 else:
