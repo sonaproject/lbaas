@@ -3,11 +3,7 @@ CFG_FILE="/usr/local/etc/haproxy/haproxy.cfg"
 OLD_CKSUM=""
 CUR_CKSUM=""
 
-if [ ! -f "$CFG_FILE" ]
-then
-    sleep 60
-    pkill cksum.sh
-fi
+echo "`date` Start cksum.sh" >> /cksum.log
 
 while :
 do
