@@ -3,7 +3,8 @@ import inspect
 from xos.logger import Logger, logging
 from os.path import basename
 
-logger = Logger(level=logging.INFO)
+logger = Logger(level=logging.DEBUG)
+logger.setLevel(logging.DEBUG)
 
 def debug(msg):
     logger.debug(
