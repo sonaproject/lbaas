@@ -4,16 +4,13 @@
 
 global
     daemon
-    user nobody
-    group nogroup
+    maxconn 256
     log /dev/log local0
     log /dev/log local1 notice
-    stats timeout 10s
-    stats socket /run/{{loadbalancer.lb_name}}.sock mode 0666 level admin
+    stats socket /run/{{loadbalancer.loadbalancer_id}}.sock mode 0666 level admin
 
 defaults
     log global
-    retries 3
     timeout connect 5000
     timeout client  50000
     timeout server  50000
@@ -28,7 +25,7 @@ listen stats
     stats uri /stats
 {% endif %}
 
-frontend {{listener.listener_name}}
+frontend {{listener.listener_id}}
     option tcplog
 {% if listener.protocol.lower() == "http" %}
     option forwardfor
@@ -36,9 +33,9 @@ frontend {{listener.listener_name}}
     #bind {{loadbalancer.vip_address}}:{{listener.protocol_port}}
     bind *:{{listener.protocol_port}}
     mode {{listener.protocol.lower()}}
-    default_backend {{pool.pool_name}}
+    default_backend {{pool.pool_id}}
 
-backend {{pool.pool_name}}
+backend {{pool.pool_id}}
     mode {{pool.protocol.lower()}}
 {% if pool.lb_algorithm == "ROUND_ROBIN" %}
     balance roundrobin
