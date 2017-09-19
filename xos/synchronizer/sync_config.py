@@ -18,29 +18,9 @@ def update_lb_vip_addr(instance_id, vip_address):
     try:
         lb = Loadbalancer.objects.get(instance_id=instance_id)
         lb.vip_address = vip_address
-        lb.save()
+        lb.save(update_fields=['vip_address', 'updated'], always_update_timestamp=True)
     except Exception as err:
         slog.error("%s" % str(err))
-
-    try:
-        config = LBconfig.objects.get(instance_id=instance_id)
-        config.ansible_update=True
-        config.save()
-    except Exception as err:
-        slog.error("%s" % str(err))
-
-    for idx in range(1, 180, 1):
-        config = LBconfig.objects.get(instance_id=instance_id)
-        if config.ansible_update:
-            ins = ServiceInstance.objects.get(id=instance_id)
-            if ins.updated <= ins.enacted:
-                ins.updated = time.time()
-                slog.info("[idx=%s] update time(%s) of instance_id(%s)" % (idx, ins.updated, lb.instance_id))
-                ins.save()
-            else:
-                break
-
-            time.sleep(1)
 
     slog.info("[Thread] lb.vip_address = %s" % lb.vip_address)
 

@@ -15,7 +15,7 @@ logger = Logger(level=logging.INFO)
 
 from rest_framework.authentication import *
 
-from services.lbaas.models import LbService, Loadbalancer, Listener, Pool, Member, Healthmonitor, LBconfig
+from services.lbaas.models import LbService, Loadbalancer, Listener, Pool, Member, Healthmonitor
 
 import json
 import uuid
@@ -268,7 +268,7 @@ class LoadbalancerViewSet(XOSViewSet):
                 logger.info("pool_id does not exist in Pool table (pool_id=%s)" % lb_info.ptr_pool_id)
                 return None
 
-        lb_info.save()
+        lb_info.save(always_update_timestamp=True)
 
         return lb_info
 
@@ -369,10 +369,6 @@ class LoadbalancerViewSet(XOSViewSet):
 
         rsp_data, lb_obj = self.get_rsp_body(lb_info.loadbalancer_id)
 
-        lbconfig = LBconfig()
-        lbconfig.instance_id=lb_info.tenantwithcontainer_ptr_id
-        lbconfig.save()
-
         self.print_message_log("RSP", rsp_data)
         return Response(rsp_data, status=status.HTTP_201_CREATED)
 
@@ -418,8 +414,7 @@ class LoadbalancerViewSet(XOSViewSet):
         ins.save()
 	
         Loadbalancer.objects.filter(loadbalancer_id=pk).delete()
-        Port.objects.filter(instance_id=lb_info.instance_id, ip=lb_info.vip_address).delete()
-        LBconfig.objects.filter(instance_id=lb_info.instance_id).delete()
+        Port.objects.filter(instance_id=lb_info.instance_id).delete()
         Tag.objects.filter(object_id=lb_info.instance_id).delete()
 
         self.print_message_log("RSP", "")

@@ -125,13 +125,6 @@ class SyncLoadbalancer(SyncInstanceUsingAnsible):
         except Exception as e:
             slog.error("Instance.objects.get() failed - %s" % str(e))
 
-        try:
-            config = LBconfig.objects.get(instance_id=o.instance_id)
-            config.ansible_update=False
-            config.save()
-        except Exception as e:
-            slog.error("LBconfig.objects.get() failed - %s" % str(e))
-
         lb_status = True
         if self.update_pool_status(o.pool_id) != "ACTIVE":
             slog.error("Pool status is not ACTIVE (pool_id=%s)" % o.pool_id)

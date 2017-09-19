@@ -15,7 +15,7 @@ logger = Logger(level=logging.INFO)
 
 from rest_framework.authentication import *
 
-from services.lbaas.models import LbService, Loadbalancer, Listener, Pool, Member, Healthmonitor, LBconfig
+from services.lbaas.models import LbService, Loadbalancer, Listener, Pool, Member, Healthmonitor
 
 import json
 import uuid
@@ -36,30 +36,10 @@ def get_default_lb_service():
     return None
 
 def update_loadbalancer_model(listener_id):
-
     lbs = Loadbalancer.objects.filter(ptr_listener_id=listener_id)
     for lb in lbs:
-        try:
-            config = LBconfig.objects.get(instance_id=lb.instance.id)
-            config.ansible_update=True
-            config.save()
-        except Exception as err:
-            logger.error("%s" % str(err))
-
-    for lb in lbs:
-        for idx in range (1, 60, 1):
-            config = LBconfig.objects.get(instance_id=lb.instance.id)
-            if config.ansible_update:
-                ins = ServiceInstance.objects.get(id=lb.instance_id)
-                if ins.updated <= ins.enacted:
-                    ins.updated = time.time()
-                    logger.info("[idx=%s] update time(%s) of instance_id(%s)" % (idx, ins.updated, lb.instance_id))
-                    ins.save()
-            else:
-                break
-
-            time.sleep(1)
-
+        lb.save(always_update_timestamp=True)
+        
     if lbs.count() == 0:
         logger.info("ptr_listener_id(%s) does not exist in Loadbalancer table" % ptr_listener_id)
 
