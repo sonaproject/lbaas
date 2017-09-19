@@ -322,7 +322,7 @@ class LoadbalancerViewSet(XOSViewSet):
 
         if 'slice_name' in request.data and request.data["slice_name"]:
             tmp_slice_name = request.data["slice_name"]
-            network_name = tmp_slice_name.split('_')
+            network_name = tmp_slice_name.split('_', 1)
             try:
             	network = Network.objects.get(name=network_name[1])
             	logger.info("network.id=%s" % network.id)
