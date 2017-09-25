@@ -4,8 +4,6 @@
 # [ctail utility]
 #
 # Perl implementation of 'tail -f'
-# print a line with ansi colour on the specific substr.
-# Author      : khh_1980@telcoware.com
 ###############################################################
 
 use strict;
