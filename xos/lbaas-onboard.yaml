@@ -15,7 +15,7 @@ topology_template:
           # base_url is non-null.
           xproto: ./
           tosca_custom_types: lbaas.yaml
-          tosca_resource: tosca/resources/lbservice.py, tosca/resources/lbtenant.py
+          tosca_resource: tosca/resources/lbservice.py, tosca/resources/lbserviceinstance.py
           rest_tenant: api/tenant/loadbalancer.py, api/tenant/listener.py, api/tenant/pool.py, api/tenant/health.py
           private_key: file:///opt/xos/key_import/lbaas_rsa
           public_key: file:///opt/xos/key_import/lbaas_rsa.pub
