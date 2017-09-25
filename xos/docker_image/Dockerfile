@@ -50,7 +50,6 @@ RUN set -x \
 RUN apt-get update \
     && apt-get install -y vim net-tools hatop ssh openssh-client curl
 
-COPY haproxy.cfg /usr/local/etc/haproxy/haproxy.cfg
 COPY docker-entrypoint.sh /
 COPY cksum.sh  /
 COPY haproxy  /etc/init.d/
