@@ -85,7 +85,7 @@ class HealthViewSet(XOSViewSet):
             logger.info("%s" % http)
             logger.info("Send http rsponse Success..\n")
         else:
-            logger.error("Unvalid msg_type(%s)" % msg_type)
+            logger.error("Invalid msg_type(%s)" % msg_type)
 
     def get_rsp_body(self, health_monitor_id):
         health = Healthmonitor.objects.get(health_monitor_id=health_monitor_id)

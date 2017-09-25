@@ -169,7 +169,7 @@ class LoadbalancerViewSet(XOSViewSet):
             logger.info("%s" % http)
             logger.info("Send http rsponse Success..\n")
         else:
-            logger.error("Unvalid msg_type(%s)" % msg_type)
+            logger.error("Invalid msg_type(%s)" % msg_type)
 
     def get_rsp_body(self, lb_id):
         lb_info = Loadbalancer.objects.get(loadbalancer_id=lb_id)

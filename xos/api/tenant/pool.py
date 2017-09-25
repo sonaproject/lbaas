@@ -107,7 +107,7 @@ class PoolViewSet(XOSViewSet):
             logger.info("%s" % http)
             logger.info("Send http rsponse Success..\n")
         else:
-            logger.error("Unvalid msg_type(%s)" % msg_type)
+            logger.error("Invalid msg_type(%s)" % msg_type)
 
     def get_rsp_body(self, pool_id):
         update_pool_status(pool_id)
@@ -341,7 +341,7 @@ class MemberViewSet(XOSViewSet):
             logger.info("%s" % http)
             logger.info("Send http rsponse Success..\n")
         else:
-            logger.error("Unvalid msg_type(%s)" % msg_type)
+            logger.error("Invalid msg_type(%s)" % msg_type)
 
     def get_rsp_body(self, member_id):
         member = Member.objects.get(member_id=member_id)
