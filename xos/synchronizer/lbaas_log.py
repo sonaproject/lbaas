@@ -6,24 +6,23 @@ from os.path import basename
 logger = Logger(level=logging.DEBUG)
 logger.setLevel(logging.DEBUG)
 
+
 def debug(msg):
-    logger.debug(
-                basename(str(inspect.stack()[1][1])) + ':' + 
-                str(inspect.stack()[1][2]) + ' ' + 
-                str(inspect.stack()[1][3]) + '()  ' + 
-                str(msg))
+    logger.debug(basename(str(inspect.stack()[1][1])) + ':' +
+                 str(inspect.stack()[1][2]) + ' ' +
+                 str(inspect.stack()[1][3]) + '()  ' +
+                 str(msg))
+
 
 def info(msg):
-    logger.info(
-                basename(str(inspect.stack()[1][1])) + ':' + 
-                str(inspect.stack()[1][2]) + ' ' + 
-                str(inspect.stack()[1][3]) + '()  ' + 
+    logger.info(basename(str(inspect.stack()[1][1])) + ':' +
+                str(inspect.stack()[1][2]) + ' ' +
+                str(inspect.stack()[1][3]) + '()  ' +
                 str(msg))
+
 
 def error(msg):
-    logger.error(
-                basename(str(inspect.stack()[1][1])) + ':' + 
-                str(inspect.stack()[1][2]) + ' ' + 
-                str(inspect.stack()[1][3]) + '()  ' + 
-                str(msg))
-
+    logger.error(basename(str(inspect.stack()[1][1])) + ':' +
+                 str(inspect.stack()[1][2]) + ' ' +
+                 str(inspect.stack()[1][3]) + '()  ' +
+                 str(msg))

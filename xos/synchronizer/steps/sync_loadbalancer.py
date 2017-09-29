@@ -3,7 +3,6 @@ import sys
 import json
 import collections
 import time
-import threading
 import lbaas_log as slog
 
 from datetime import datetime
@@ -12,6 +11,7 @@ from synchronizers.new_base.modelaccessor import *
 
 parentdir = os.path.join(os.path.dirname(__file__), "..")
 sys.path.insert(0, parentdir)
+
 
 class SyncLoadbalancer(SyncInstanceUsingAnsible):
     provides = [Loadbalancer]
@@ -102,7 +102,7 @@ class SyncLoadbalancer(SyncInstanceUsingAnsible):
     def get_extra_attributes(self, o):
         slog.info("===============================================================")
         slog.info("instance_name=%s, instance_id=%d, instance_uuid=%s"
-            % (o.instance.instance_name, o.instance_id, o.instance.instance_uuid))
+                  % (o.instance.instance_name, o.instance_id, o.instance.instance_uuid))
 
         try:
             tags = Tag.objects.filter(object_id=o.instance.id)
@@ -115,11 +115,11 @@ class SyncLoadbalancer(SyncInstanceUsingAnsible):
                 userdata['expected_result'] = "haproxy is running."
                 userdata['result'] = "Initialized"
 
-                tag = Tag(service = o.instance.slice.service,
-                            content_type = o.instance.self_content_type_id,
-                            object_id = o.instance.id,
-                            name = "chk_container_status",
-                            value = json.dumps(userdata))
+                tag = Tag(service=o.instance.slice.service,
+                          content_type=o.instance.self_content_type_id,
+                          object_id=o.instance.id,
+                          name="chk_container_status",
+                          value=json.dumps(userdata))
 
                 tag.save()
         except Exception as e:
@@ -134,7 +134,7 @@ class SyncLoadbalancer(SyncInstanceUsingAnsible):
             slog.error("Loadbalancer status is not ACTIVE (loadbalancer_id=%s)" % o.loadbalancer_id)
             lb_status = False
 
-        if lb_status == False:
+        if not lb_status:
             return None
 
         fields = {}
@@ -147,7 +147,7 @@ class SyncLoadbalancer(SyncInstanceUsingAnsible):
         loadbalancer['lb_name'] = o.name
         loadbalancer['vip_address'] = o.vip_address
         fields['loadbalancer'] = json.dumps(loadbalancer, indent=4)
-       
+
         slog.info(">>>>> Loadbalancer")
         slog.info("%s" % json.dumps(loadbalancer, indent=4))
 
@@ -208,7 +208,7 @@ class SyncLoadbalancer(SyncInstanceUsingAnsible):
         try:
             health_monitor = {}
             obj = Healthmonitor.objects.get(id=pool['health_monitor_id'])
-            
+
             health_monitor['health_monitor_id'] = obj.health_monitor_id
             health_monitor['type'] = obj.type
             health_monitor['delay'] = obj.delay
@@ -227,7 +227,6 @@ class SyncLoadbalancer(SyncInstanceUsingAnsible):
         slog.info("===============================================================")
         slog.info(">>> curl command for haproxy test")
         slog.info("curl %s:%s" % (loadbalancer['vip_address'], listener['protocol_port']))
-
 
         fields = self.convert_unicode_to_str(fields)
 

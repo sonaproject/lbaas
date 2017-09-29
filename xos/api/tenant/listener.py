@@ -4,30 +4,28 @@ from rest_framework.reverse import reverse
 from rest_framework import serializers
 from rest_framework import generics
 from rest_framework import status
+from rest_framework.authentication import *
 from core.models import *
 from django.forms import widgets
 from django.conf import settings
 from xos.apibase import XOSListCreateAPIView, XOSRetrieveUpdateDestroyAPIView, XOSPermissionDenied
 from api.xosapi_helpers import PlusModelSerializer, XOSViewSet, ReadOnlyField
-
 from xos.logger import Logger, logging
-logger = Logger(level=logging.INFO)
-
-from rest_framework.authentication import *
-
 from services.lbaas.models import LbService, Loadbalancer, Listener, Pool, Member, Healthmonitor
-
 import json
 import uuid
 import traceback
 import time
 import threading
 
+logger = Logger(level=logging.INFO)
 settings.DEBUG = False
+
 
 class CsrfExemptSessionAuthentication(SessionAuthentication):
     def enforce_csrf(self, request):
         return  # To not perform the csrf check previously happening
+
 
 def get_default_lb_service():
     lb_services = LbService.objects.all()
@@ -35,13 +33,15 @@ def get_default_lb_service():
         return lb_services[0]
     return None
 
+
 def update_loadbalancer_model(listener_id):
     lbs = Loadbalancer.objects.filter(ptr_listener_id=listener_id)
     for lb in lbs:
         lb.save(always_update_timestamp=True)
-        
+
     if lbs.count() == 0:
-        logger.info("ptr_listener_id(%s) does not exist in Loadbalancer table" % ptr_listener_id)
+        logger.info("ptr_listener_id(%s) does not exist in Loadbalancer table" % listener_id)
+
 
 class ListenerSerializer(PlusModelSerializer):
     id = ReadOnlyField()
@@ -49,6 +49,7 @@ class ListenerSerializer(PlusModelSerializer):
     class Meta:
         model = Listener
         fields = ('id', 'name', 'protocol', 'protocol_port', 'stat_port', 'admin_state_up', 'connection_limit', 'description')
+
 
 class ListenerViewSet(XOSViewSet):
     authentication_classes = (CsrfExemptSessionAuthentication, BasicAuthentication)
@@ -109,16 +110,16 @@ class ListenerViewSet(XOSViewSet):
     def update_listener_info(self, listener, request):
         required_flag = True
         if request.method == "POST":
-            if not 'name' in request.data or request.data["name"]=="":
+            if 'name' not in request.data or request.data["name"] == "":
                 required_flag = False
-            if not 'protocol' in request.data or request.data["protocol"]=="":
+            if 'protocol' not in request.data or request.data["protocol"] == "":
                 required_flag = False
-            if not 'protocol_port' in request.data or request.data["protocol_port"]=="":
+            if 'protocol_port' not in request.data or request.data["protocol_port"] == "":
                 required_flag = False
-            if not 'stat_port' in request.data or request.data["stat_port"]=="":
+            if 'stat_port' not in request.data or request.data["stat_port"] == "":
                 required_flag = False
 
-        if required_flag == False:
+        if not required_flag:
             logger.error("Mandatory fields do not exist!")
             return None
 
@@ -176,7 +177,7 @@ class ListenerViewSet(XOSViewSet):
         listener.listener_id = str(uuid.uuid4())
 
         listener = self.update_listener_info(listener, request)
-        if listener == None:
+        if listener is None:
             return Response("Error: Mandatory fields not exist!", status=status.HTTP_400_BAD_REQUEST)
 
         rsp_data, listener_obj = self.get_rsp_body(listener.listener_id)
@@ -208,7 +209,7 @@ class ListenerViewSet(XOSViewSet):
             return Response("Error: listener_id does not exist in Listener table", status=status.HTTP_404_NOT_FOUND)
 
         listener = self.update_listener_info(listener, request)
-        if listener == None:
+        if listener is None:
             return Response("Error: Mandatory fields not exist!", status=status.HTTP_400_BAD_REQUEST)
 
         rsp_data, listener_obj = self.get_rsp_body(pk)

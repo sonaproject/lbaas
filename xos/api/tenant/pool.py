@@ -4,36 +4,35 @@ from rest_framework.reverse import reverse
 from rest_framework import serializers
 from rest_framework import generics
 from rest_framework import status
+from rest_framework.authentication import *
 from core.models import *
 from django.forms import widgets
 from django.conf import settings
 from xos.apibase import XOSListCreateAPIView, XOSRetrieveUpdateDestroyAPIView, XOSPermissionDenied
 from api.xosapi_helpers import PlusModelSerializer, XOSViewSet, ReadOnlyField
-
 from xos.logger import Logger, logging
-logger = Logger(level=logging.INFO)
-
-from rest_framework.authentication import *
-
 from services.lbaas.models import LbService, Loadbalancer, Listener, Pool, Member, Healthmonitor
-
 import json
 import uuid
 import traceback
 import time
 import threading
 
+logger = Logger(level=logging.INFO)
 settings.DEBUG = False
+
 
 class CsrfExemptSessionAuthentication(SessionAuthentication):
     def enforce_csrf(self, request):
         return  # To not perform the csrf check previously happening
+
 
 def get_default_lb_service():
     lb_services = LbService.objects.all()
     if lb_services:
         return lb_services[0]
     return None
+
 
 def update_pool_status(pool_id):
     pool_status = ""
@@ -62,6 +61,7 @@ def update_pool_status(pool_id):
     pool.save()
 
     return pool.status
+
 
 def update_loadbalancer_model(pool_id):
     lbs = Loadbalancer.objects.filter(ptr_pool_id=pool_id)
@@ -134,7 +134,7 @@ class PoolViewSet(XOSViewSet):
         pool_obj['pool_id'] = pool.pool_id
         pool_obj['name'] = pool.name
         pool_obj['admin_state_up'] = pool.admin_state_up
-        
+
         pool_obj['health_monitors'] = health_list
         healths = Healthmonitor.objects.filter(id=pool.health_monitor_id)
         for health in healths:
@@ -156,14 +156,14 @@ class PoolViewSet(XOSViewSet):
     def update_pool_info(self, pool, request):
         required_flag = True
         if request.method == "POST":
-            if not 'lb_algorithm' in request.data or request.data["lb_algorithm"]=="":
+            if 'lb_algorithm' not in request.data or request.data["lb_algorithm"] == "":
                 required_flag = False
-            if not 'name' in request.data or request.data["name"]=="":
+            if 'name' not in request.data or request.data["name"] == "":
                 required_flag = False
-            if not 'protocol' in request.data or request.data["protocol"]=="":
+            if 'protocol' not in request.data or request.data["protocol"] == "":
                 required_flag = False
 
-        if required_flag == False:
+        if not required_flag:
             logger.error("Mandatory fields not exist!")
             return None
 
@@ -186,7 +186,7 @@ class PoolViewSet(XOSViewSet):
             logger.error("JSON Key error: %s" % str(err))
             return None
 
-        if pool.ptr_health_monitor_id is None or pool.ptr_health_monitor_id=="":
+        if pool.ptr_health_monitor_id is None or pool.ptr_health_monitor_id == "":
             pool.health_monitor_id = None
         else:
             try:
@@ -195,7 +195,7 @@ class PoolViewSet(XOSViewSet):
             except KeyError as err:
                 logger.info("health_monitor_id does not exist in Healthmonitor table (health_monitor_id=%s)" % pool.ptr_health_monitor_id)
                 return None
-        
+
         pool.save()
         return pool
 
@@ -238,9 +238,9 @@ class PoolViewSet(XOSViewSet):
         pool.pool_id = str(uuid.uuid4())
 
         pool = self.update_pool_info(pool, request)
-        if pool == None:
+        if pool is None:
             return Response("Error: Mandatory fields not exist!", status=status.HTTP_400_BAD_REQUEST)
-        
+
         rsp_data, pool_obj = self.get_rsp_body(pool.pool_id)
 
         lb_thr = threading.Thread(target=update_loadbalancer_model, args=(pool.pool_id,))
@@ -270,7 +270,7 @@ class PoolViewSet(XOSViewSet):
             return Response("Error: pool_id does not exist in Pool table", status=status.HTTP_404_NOT_FOUND)
 
         pool = self.update_pool_info(pool, request)
-        if pool == None:
+        if pool is None:
             return Response("Error: Mandatory fields not exist!", status=status.HTTP_400_BAD_REQUEST)
 
         rsp_data, pool_obj = self.get_rsp_body(pk)
@@ -296,7 +296,7 @@ class PoolViewSet(XOSViewSet):
             logger.error("%s" % str(err))
 
         members = Member.objects.filter(memberpool_id=pool.id)
-    	if members.count() > 0:
+        if members.count() > 0:
             return Response("Error: There is a member that uses pool_id", status=status.HTTP_404_NOT_FOUND)
 
         lb_thr = threading.Thread(target=update_loadbalancer_model, args=(pk,))
@@ -314,12 +314,13 @@ class MemberSerializer(PlusModelSerializer):
         model = Member
         fields = ('id', 'memberpool', 'ptr_pool_id', 'address', 'protocol_port', 'weight', 'admin_state_up')
 
+
 class MemberViewSet(XOSViewSet):
     authentication_classes = (CsrfExemptSessionAuthentication, BasicAuthentication)
 
     base_name = "pools"
     method_name = "pools/(?P<pool_id>[a-zA-Z0-9\-_]+)/members"
-    method_kind = "viewset" 
+    method_kind = "viewset"
     queryset = Member.objects.all()
     serializer_class = MemberSerializer
 
@@ -361,14 +362,14 @@ class MemberViewSet(XOSViewSet):
     def update_member_info(self, member, request):
         required_flag = True
         if request.method == "POST":
-            if not 'ptr_pool_id' in request.data or request.data["ptr_pool_id"]=="":
+            if 'ptr_pool_id' not in request.data or request.data["ptr_pool_id"] == "":
                 required_flag = False
-            if not 'address' in request.data or request.data["address"]=="":
+            if 'address' not in request.data or request.data["address"] == "":
                 required_flag = False
-            if not 'protocol_port' in request.data or request.data["protocol_port"]=="":
+            if 'protocol_port' not in request.data or request.data["protocol_port"] == "":
                 required_flag = False
 
-        if required_flag == False:
+        if not required_flag:
             logger.error("Mandatory fields do not exist!")
             return None
 
@@ -449,7 +450,7 @@ class MemberViewSet(XOSViewSet):
         member.provisioning_status = "ACTIVE"
 
         member = self.update_member_info(member, request)
-        if member == None:
+        if member is None:
             return Response("Error: Mandatory fields not exist!", status=status.HTTP_400_BAD_REQUEST)
 
         rsp_data, member_obj = self.get_rsp_body(member.member_id)
@@ -489,11 +490,11 @@ class MemberViewSet(XOSViewSet):
             return Response("Error: member_id does not exist in Member table", status=status.HTTP_404_NOT_FOUND)
 
         member = self.update_member_info(member, request)
-        if member == None:
+        if member is None:
             return Response("Error: Mandatory fields not exist!", status=status.HTTP_400_BAD_REQUEST)
 
         rsp_data, member_obj = self.get_rsp_body(pk)
- 
+
         lb_thr = threading.Thread(target=update_loadbalancer_model, args=(pool_id,))
         lb_thr.start()
 

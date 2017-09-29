@@ -6,6 +6,7 @@ from xosresource import XOSResource
 from core.models import Service
 from services.lbaas.models import Loadbalancer, Listener, Pool, Member, Healthmonitor
 
+
 class LbaasLoadbalancer(XOSResource):
     provides = "tosca.nodes.Loadbalancer"
     xos_model = Loadbalancer
@@ -37,7 +38,7 @@ class LbaasLoadbalancer(XOSResource):
 
         if "loadbalancer_id" in args:
             loadbalancer_obj = Loadbalancer.objects.filter(loadbalancer_id=args["loadbalancer_id"])
-            if loadbalancer_obj: 
+            if loadbalancer_obj:
                 return loadbalancer_obj
 
         if "owner" in args:
@@ -46,6 +47,7 @@ class LbaasLoadbalancer(XOSResource):
 
     def can_delete(self, obj):
         return super(LbaasLoadbalancer, self).can_delete(obj)
+
 
 class LbaasListener(XOSResource):
     provides = "tosca.nodes.Listener"
@@ -67,13 +69,14 @@ class LbaasListener(XOSResource):
 
         if "listener_id" in args:
             listener_obj = Listener.objects.filter(listener_id=args["listener_id"])
-            if listener_obj: 
+            if listener_obj:
                 return listener_obj
 
         return Listener.objects.filter(name=args["name"])
 
     def can_delete(self, obj):
         return super(LbaasListener, self).can_delete(obj)
+
 
 class LbaasPool(XOSResource):
     provides = "tosca.nodes.Pool"
@@ -100,13 +103,14 @@ class LbaasPool(XOSResource):
 
         if "pool_id" in args:
             pool_obj = Pool.objects.filter(pool_id=args["pool_id"])
-            if pool_obj: 
+            if pool_obj:
                 return pool_obj
 
         return Pool.objects.filter(name=args["name"])
 
     def can_delete(self, obj):
         return super(LbaasPool, self).can_delete(obj)
+
 
 class LbaasMember(XOSResource):
     provides = "tosca.nodes.Member"
@@ -133,16 +137,17 @@ class LbaasMember(XOSResource):
 
         if "member_id" in args:
             member_obj = Member.objects.filter(member_id=args["member_id"])
-            if member_obj: 
+            if member_obj:
                 return member_obj
 
         if "memberpool" in args:
             return Member.objects.filter(name=args["name"], memberpool=args["memberpool"])
 
-        return [] 
+        return []
 
     def can_delete(self, obj):
         return super(LbaasMember, self).can_delete(obj)
+
 
 class LbaasHealthmonitor(XOSResource):
     provides = "tosca.nodes.Healthmonitor"

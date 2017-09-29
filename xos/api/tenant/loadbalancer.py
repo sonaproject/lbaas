@@ -4,35 +4,34 @@ from rest_framework.reverse import reverse
 from rest_framework import serializers
 from rest_framework import generics
 from rest_framework import status
+from rest_framework.authentication import *
 from core.models import *
 from django.forms import widgets
 from django.conf import settings
 from xos.apibase import XOSListCreateAPIView, XOSRetrieveUpdateDestroyAPIView, XOSPermissionDenied
 from api.xosapi_helpers import PlusModelSerializer, XOSViewSet, ReadOnlyField
-
 from xos.logger import Logger, logging
-logger = Logger(level=logging.INFO)
-
-from rest_framework.authentication import *
-
 from services.lbaas.models import LbService, Loadbalancer, Listener, Pool, Member, Healthmonitor
-
 import json
 import uuid
 import traceback
 import pool
 
+logger = Logger(level=logging.INFO)
 settings.DEBUG = False
+
 
 class CsrfExemptSessionAuthentication(SessionAuthentication):
     def enforce_csrf(self, request):
         return  # To not perform the csrf check previously happening
+
 
 def get_default_lb_service():
     lb_services = LbService.objects.all()
     if lb_services:
         return lb_services[0]
     return None
+
 
 def check_loadbalancer_model_info(lb_id):
     logger.info("###################################################")
@@ -67,7 +66,8 @@ def check_loadbalancer_model_info(lb_id):
             logger.error("Listener information does not exist (listener_id=%s)" % lb.listener_id)
             return "Error"
     return "Success"
-            
+
+
 def check_loadbalancer_model_all_info():
     logger.info("###################################################")
 
@@ -129,6 +129,7 @@ def check_loadbalancer_model_all_info():
 
     return "Success"
 
+
 class LoadbalancerSerializer(PlusModelSerializer):
         id = ReadOnlyField()
         owner = serializers.PrimaryKeyRelatedField(queryset=LbService.objects.all(), default=get_default_lb_service)
@@ -137,6 +138,7 @@ class LoadbalancerSerializer(PlusModelSerializer):
         class Meta:
             model = Loadbalancer
             fields = ('id', 'owner', 'name', 'listener', 'ptr_listener_id', 'pool', 'ptr_pool_id', 'slice_name', 'vip_address', 'description', 'admin_state_up')
+
 
 class LoadbalancerViewSet(XOSViewSet):
     authentication_classes = (CsrfExemptSessionAuthentication, BasicAuthentication)
@@ -152,8 +154,8 @@ class LoadbalancerViewSet(XOSViewSet):
         patterns = super(LoadbalancerViewSet, self).get_urlpatterns(api_path=api_path)
 
         # lb to demonstrate adding a custom endpoint
-        patterns.append( self.detail_url("statuses/$", {"get": "get_loadbalancer_statuses"}, "loadbalancer_statuses") )
-        patterns.append( self.detail_url("check/$", {"get": "get_loadbalancer_check"}, "loadbalancer_check") )
+        patterns.append(self.detail_url("statuses/$", {"get": "get_loadbalancer_statuses"}, "loadbalancer_statuses"))
+        patterns.append(self.detail_url("check/$", {"get": "get_loadbalancer_check"}, "loadbalancer_check"))
 
         return patterns
 
@@ -196,14 +198,14 @@ class LoadbalancerViewSet(XOSViewSet):
         lb_obj['loadbalancer_id'] = lb_info.loadbalancer_id
         lb_obj['operating_status'] = lb_info.operating_status
         lb_obj['loadbalancer_name'] = lb_info.name
-        
+
         lb_obj['pools'] = pool_list
         pools = Pool.objects.filter(id=lb_info.pool_id)
         for pool in pools:
             pool_obj = {}
             pool_obj['id'] = pool.pool_id
             pool_list.append(pool_obj)
-        
+
         lb_obj['provider'] = "haproxy"
 
         return root_obj, lb_obj
@@ -211,12 +213,12 @@ class LoadbalancerViewSet(XOSViewSet):
     def update_loadbalancer_info(self, lb_info, request):
         required_flag = True
         if request.method == "POST":
-            if not 'name' in request.data or request.data["name"]=="":
+            if 'name' not in request.data or request.data["name"] == "":
                 required_flag = False
-            if not 'slice_name' in request.data or request.data["slice_name"]=="":
+            if 'slice_name' not in request.data or request.data["slice_name"] == "":
                 required_flag = False
-    
-        if required_flag == False:
+
+        if not required_flag:
             logger.error("Mandatory fields not exist!")
             return None
 
@@ -224,9 +226,9 @@ class LoadbalancerViewSet(XOSViewSet):
             if 'name' in request.data and request.data["name"]:
                 lb_info.name = request.data["name"]
             if 'listener' in request.data and request.data["listener"]:
-                lb_info.listener_id= request.data["listener"]
+                lb_info.listener_id = request.data["listener"]
             if 'pool' in request.data and request.data["pool"]:
-                lb_info.pool_id= request.data["pool"]
+                lb_info.pool_id = request.data["pool"]
             if 'slice_name' in request.data and request.data["slice_name"]:
                 lb_info.slice_name = request.data["slice_name"]
             if 'vip_address' in request.data and request.data["vip_address"]:
@@ -236,11 +238,11 @@ class LoadbalancerViewSet(XOSViewSet):
             if 'admin_state_up' in request.data and request.data["admin_state_up"]:
                 lb_info.admin_state_up = request.data["admin_state_up"]
             if 'listener_id' in request.data:
-                lb_info.listener_id= request.data["listener_id"]
+                lb_info.listener_id = request.data["listener_id"]
             if 'pool_id' in request.data:
                 lb_info.pool_id = request.data["pool_id"]
             if 'ptr_listener_id' in request.data:
-                lb_info.ptr_listener_id= request.data["ptr_listener_id"]
+                lb_info.ptr_listener_id = request.data["ptr_listener_id"]
             if 'ptr_pool_id' in request.data:
                 lb_info.ptr_pool_id = request.data["ptr_pool_id"]
 
@@ -248,7 +250,7 @@ class LoadbalancerViewSet(XOSViewSet):
             logger.error("JSON Key error: %s" % str(err))
             return None
 
-        if lb_info.ptr_listener_id is None or lb_info.ptr_listener_id=="":
+        if lb_info.ptr_listener_id is None or lb_info.ptr_listener_id == "":
             lb_info.listener_id = None
         else:
             try:
@@ -258,7 +260,7 @@ class LoadbalancerViewSet(XOSViewSet):
                 logger.info("listener_id does not exist in Listener table (listener_id=%s)" % lb_info.ptr_listener_id)
                 return None
 
-        if lb_info.ptr_pool_id is None or lb_info.ptr_pool_id=="":
+        if lb_info.ptr_pool_id is None or lb_info.ptr_pool_id == "":
             lb_info.pool_id = None
         else:
             try:
@@ -280,7 +282,7 @@ class LoadbalancerViewSet(XOSViewSet):
             logger.error("%s (lb_id=%s)" % ((str(err), lb_id)))
             return None
 
-    # GET: /api/tenant/loadbalancers 
+    # GET: /api/tenant/loadbalancers
     def list(self, request):
         self.print_message_log("REQ", request)
         queryset = self.filter_queryset(self.get_queryset())
@@ -307,7 +309,7 @@ class LoadbalancerViewSet(XOSViewSet):
             lb_info.owner_id = request.data["owner"]
         else:
             try:
-                service = Service.objects.get(name = "lbaas")
+                service = Service.objects.get(name="lbaas")
                 lb_info.owner_id = service.id
             except Exception as err:
                 return Response("Error: name(lbaas) does not exist in core_service", status=status.HTTP_404_NOT_FOUND)
@@ -315,7 +317,7 @@ class LoadbalancerViewSet(XOSViewSet):
             # FIXME: Read from Config file
             # Because mount_data_sets information is not available with TOSCA
             slices = Slice.objects.filter(service_id=service.id)
-            for slice in slices: 
+            for slice in slices:
                 if slice.mount_data_sets == "GenBank":
                     slice.mount_data_sets = "/usr/local/etc/haproxy/"
                     slice.save()
@@ -324,35 +326,35 @@ class LoadbalancerViewSet(XOSViewSet):
             tmp_slice_name = request.data["slice_name"]
             network_name = tmp_slice_name.split('_', 1)
             try:
-            	network = Network.objects.get(name=network_name[1])
-            	logger.info("network.id=%s" % network.id)
-            	lb_info.vip_subnet_id = network.id
-    	    except Exception as err:
+                network = Network.objects.get(name=network_name[1])
+                logger.info("network.id=%s" % network.id)
+                lb_info.vip_subnet_id = network.id
+            except Exception as err:
                 err_str = "Error: network_name(%s) does not exist in Network table" % network_name[1]
                 return Response(err_str, status=status.HTTP_404_NOT_FOUND)
 
-    	if 'listener_id' in request.data and request.data["listener_id"]:
+        if 'listener_id' in request.data and request.data["listener_id"]:
             try:
                 listener = Listener.objects.get(id=request.data["listener_id"])
             except Exception as err:
                 logger.error("%s" % str(err))
                 return Response("Error: listener_id does not exist in Listener table", status=status.HTTP_404_NOT_FOUND)
 
-    	if 'pool_id' in request.data and request.data["pool_id"]:
+        if 'pool_id' in request.data and request.data["pool_id"]:
             try:
                 pool = Pool.objects.get(id=request.data["pool_id"])
             except Exception as err:
                 logger.error("%s" % str(err))
                 return Response("Error: pool_id does not exist in Pool table", status=status.HTTP_404_NOT_FOUND)
 
-    	if 'ptr_listener_id' in request.data and request.data["ptr_listener_id"]:
+        if 'ptr_listener_id' in request.data and request.data["ptr_listener_id"]:
             try:
                 listener = Listener.objects.get(listener_id=request.data["ptr_listener_id"])
             except Exception as err:
                 logger.error("%s" % str(err))
                 return Response("Error: listener_id does not exist in Listener table", status=status.HTTP_404_NOT_FOUND)
 
-    	if 'ptr_pool_id' in request.data and request.data["ptr_pool_id"]:
+        if 'ptr_pool_id' in request.data and request.data["ptr_pool_id"]:
             try:
                 pool = Pool.objects.get(pool_id=request.data["ptr_pool_id"])
             except Exception as err:
@@ -361,10 +363,10 @@ class LoadbalancerViewSet(XOSViewSet):
 
         lb_info.loadbalancer_id = str(uuid.uuid4())
         lb_info.operating_status = "ONLINE"
-        lb_info.provisioning_status= "PENDING_CREATE"
+        lb_info.provisioning_status = "PENDING_CREATE"
 
         lb_info = self.update_loadbalancer_info(lb_info, request)
-        if lb_info == None:
+        if lb_info is None:
             return Response("Error: Mandatory fields not exist!", status=status.HTTP_400_BAD_REQUEST)
 
         rsp_data, lb_obj = self.get_rsp_body(lb_info.loadbalancer_id)
@@ -393,7 +395,7 @@ class LoadbalancerViewSet(XOSViewSet):
             return Response("Error: loadbalancer_id does not exist in Loadbalancer table", status=status.HTTP_404_NOT_FOUND)
 
         lb_info = self.update_loadbalancer_info(lb_info, request)
-        if lb_info == None:
+        if lb_info is None:
             return Response("Error: Mandatory fields not exist!", status=status.HTTP_400_BAD_REQUEST)
 
         rsp_data, lb_obj = self.get_rsp_body(pk)
@@ -412,7 +414,7 @@ class LoadbalancerViewSet(XOSViewSet):
         ins = Instance.objects.get(id=lb_info.instance_id)
         ins.deleted = True
         ins.save()
-	
+
         Loadbalancer.objects.filter(loadbalancer_id=pk).delete()
         Port.objects.filter(instance_id=lb_info.instance_id).delete()
         Tag.objects.filter(object_id=lb_info.instance_id).delete()
@@ -472,7 +474,7 @@ class LoadbalancerViewSet(XOSViewSet):
                 health_obj = {}
                 pool_obj['health_monitor'] = health_obj
                 try:
-                    health = Healthmonitor.objects.get(id = pool.health_monitor_id)
+                    health = Healthmonitor.objects.get(id=pool.health_monitor_id)
                     health_obj['type'] = health.type
                     health_obj['id'] = health.health_monitor_id
                     health_obj['provisioning_status'] = "ACTIVE"
@@ -480,7 +482,7 @@ class LoadbalancerViewSet(XOSViewSet):
                     logger.error("%s (health_monitor_id=%s)" % (str(err), pool.health_monitor_id))
 
                 pool_obj['members'] = member_list
-                members = Member.objects.filter(memberpool_id = pool.id)
+                members = Member.objects.filter(memberpool_id=pool.id)
                 if members.count() == 0:
                     logger.error("memberpool_id does not exist in Member table (memberpool_id=%s)" % pool.id)
 
@@ -501,7 +503,7 @@ class LoadbalancerViewSet(XOSViewSet):
         res_obj = {}
         result1 = check_loadbalancer_model_info(pk)
         result2 = check_loadbalancer_model_all_info()
-        
+
         lb_id = "loadbalancer_id(%s)" % pk
         res_obj[lb_id] = result1
         res_obj['all_loadbalanacer'] = result2

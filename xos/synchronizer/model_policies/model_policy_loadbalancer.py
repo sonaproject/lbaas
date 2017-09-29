@@ -5,6 +5,7 @@ from synchronizers.new_base.exceptions import *
 from synchronizers.new_base.model_policies.model_policy_tenantwithcontainer import Scheduler
 from synchronizers.new_base.model_policies.model_policy_tenantwithcontainer import LeastLoadedNodeScheduler
 
+
 class LoadbalancerPolicy(Policy):
     model_name = "Loadbalancer"
 

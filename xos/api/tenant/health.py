@@ -4,26 +4,23 @@ from rest_framework.reverse import reverse
 from rest_framework import serializers
 from rest_framework import generics
 from rest_framework import status
+from rest_framework.authentication import *
 from core.models import *
 from django.forms import widgets
 from django.conf import settings
 from xos.apibase import XOSListCreateAPIView, XOSRetrieveUpdateDestroyAPIView, XOSPermissionDenied
 from api.xosapi_helpers import PlusModelSerializer, XOSViewSet, ReadOnlyField
-
 from xos.logger import Logger, logging
-logger = Logger(level=logging.INFO)
-
-from rest_framework.authentication import *
-
 from services.lbaas.models import LbService, Loadbalancer, Listener, Pool, Member, Healthmonitor
-
 import json
 import uuid
 import traceback
 import time
 import threading
 
+logger = Logger(level=logging.INFO)
 settings.DEBUG = False
+
 
 def get_default_lb_service():
     lb_services = LbService.objects.all()
@@ -31,14 +28,16 @@ def get_default_lb_service():
         return lb_services[0]
     return None
 
+
 class CsrfExemptSessionAuthentication(SessionAuthentication):
     def enforce_csrf(self, request):
         return  # To not perform the csrf check previously happening
 
+
 def update_loadbalancer_model(health_monitor_id):
     health = Healthmonitor.objects.get(health_monitor_id=health_monitor_id)
     pools = Pool.objects.filter(health_monitor_id=health.id)
-    
+
     for pool in pools:
         lbs = Loadbalancer.objects.filter(pool_id=pool.id)
 
@@ -51,12 +50,14 @@ def update_loadbalancer_model(health_monitor_id):
     if pools.count() == 0:
         logger.info("health_monitor_id does not exist in Pool table (health_monitor_id=%s)" % health.id)
 
+
 class HealthSerializer(PlusModelSerializer):
     id = ReadOnlyField()
 
     class Meta:
         model = Healthmonitor
         fields = ('id', 'name', 'type', 'delay', 'max_retries', 'timeout', 'http_method', 'admin_state_up', 'url_path', 'expected_codes')
+
 
 class HealthViewSet(XOSViewSet):
     authentication_classes = (CsrfExemptSessionAuthentication, BasicAuthentication)
@@ -123,18 +124,18 @@ class HealthViewSet(XOSViewSet):
     def update_health_info(self, health, request):
         required_flag = True
         if request.method == "POST":
-            if not 'name' in request.data or request.data["name"]=="":
+            if 'name' not in request.data or request.data["name"] == "":
                 required_flag = False
-            if not 'delay' in request.data or request.data["delay"]=="":
+            if 'delay' not in request.data or request.data["delay"] == "":
                 required_flag = False
-            if not 'max_retries' in request.data or request.data["max_retries"]=="":
+            if 'max_retries' not in request.data or request.data["max_retries"] == "":
                 required_flag = False
-            if not 'timeout' in request.data or request.data["timeout"]=="":
+            if 'timeout' not in request.data or request.data["timeout"] == "":
                 required_flag = False
-            if not 'type' in request.data or request.data["type"]=="":
+            if 'type' not in request.data or request.data["type"] == "":
                 required_flag = False
 
-        if required_flag == False:
+        if not required_flag:
             logger.error("Mandatory fields not exist!")
             return None
 
@@ -196,8 +197,8 @@ class HealthViewSet(XOSViewSet):
         health.health_monitor_id = str(uuid.uuid4())
 
         health = self.update_health_info(health, request)
-        if health == None:
-      	    return Response("Error: Mandatory fields not exist!", status=status.HTTP_400_BAD_REQUEST)
+        if health is None:
+            return Response("Error: Mandatory fields not exist!", status=status.HTTP_400_BAD_REQUEST)
 
         rsp_data, health_obj = self.get_rsp_body(health.health_monitor_id)
 
@@ -228,7 +229,7 @@ class HealthViewSet(XOSViewSet):
             return Response("Error: health_monitor_id does not exist in Healthmonitor table", status=status.HTTP_404_NOT_FOUND)
 
         health = self.update_health_info(health, request)
-        if health == None:
+        if health is None:
             return Response("Error: Mandatory fields not exist!", status=status.HTTP_400_BAD_REQUEST)
 
         rsp_data, health_obj = self.get_rsp_body(pk)
@@ -247,16 +248,16 @@ class HealthViewSet(XOSViewSet):
         if health is None:
             return Response("Error: health_monitor_id does not exist in Healthmonitor table", status=status.HTTP_404_NOT_FOUND)
 
-    	try:
+        try:
             pool = Pool.objects.get(health_monitor_id=health.id)
             return Response("Error: There is a pool that uses healthmontor_id", status=status.HTTP_404_NOT_FOUND)
         except Exception as err:
             logger.error("%s" % str(err))
- 
+
         lb_thr = threading.Thread(target=update_loadbalancer_model, args=(pk,))
         lb_thr.start()
 
-    	Healthmonitor.objects.filter(health_monitor_id=pk).delete()
-       
+        Healthmonitor.objects.filter(health_monitor_id=pk).delete()
+
         self.print_message_log("RSP", "")
         return Response(status=status.HTTP_204_NO_CONTENT)
