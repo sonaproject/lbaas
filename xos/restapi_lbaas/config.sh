@@ -13,6 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
+PASSWORD=`cat  /opt/credentials/xosadmin@opencord.org`
 HOST=10.10.2.245:9000
-AUTH=xosadmin@opencord.org:nt88HDZ9hHfsa5yk3tdX
+AUTH=xosadmin@opencord.org:$PASSWORD
